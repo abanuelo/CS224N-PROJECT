@@ -95,7 +95,7 @@ class BiLSTM_CRF(nn.Module):
 					bptrs_t.append(best_tag_id)
 					viterbivars_t.append(next_tag_var[0][best_tag_id].view(1)) #check dimesions during run
 				# Now add in the emission scores, and assign forward_var to the set
-		   		# of viterbi variables we just computed
+				# of viterbi variables we just computed
 				forward_var = (torch.cat(viterbivars_t)+feat).view(1, -1)
 				backpointers.append(bptrs_t)
 
@@ -157,14 +157,12 @@ class BiLSTM_CRF(nn.Module):
 			alpha = log_sum_exp(terminal_var)
 			return alpha
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
 	#Initialize these Variables
 	START_TAG = "<"
 	STOP_TAG = ">"
 	EMBEDDING_DIM = 4
 	HIDDEN_DIM = 4
-
 	#Example Data
 	training_data = [(list("กฎหมายกับการเบียดบังคนจน"), list("000001010010000010101"))]
 
@@ -180,11 +178,11 @@ if __name__ == "__main__":
 
 	#Check Predictions Before Training
 	with torch.no_grad():
-    	precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
-    	precheck_tags = torch.tensor([tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long)
-    	print(model(precheck_sent))
+		precheck_sent = prepare_sequence(training_data[0][0], char_to_ix)
+		precheck_tags = torch.tensor([tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long)
+		print(model(precheck_sent))
 
-    #Prepare Sequence from LSTM 
+	#Prepare Sequence from LSTM 
 
 	
 
