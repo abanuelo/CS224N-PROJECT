@@ -150,7 +150,6 @@ def log_sum_exp(vec):
 
 
 class BiLSTM_CRF(nn.Module):
-
     def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
