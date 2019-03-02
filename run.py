@@ -54,7 +54,7 @@ def train():
     tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
 
     #initialize model and optimizer TODO Adam optimizer 
-    model = BiLSTM_CRF(len(char2ix), tag2ix, EMBEDDING_DIM, HIDDEN_DIM, tag2ix[START_TAG], tag2ix[STOP_TAG])
+    model = BiLSTM_CRF(char2ix, tag2ix, EMBEDDING_DIM, HIDDEN_DIM, tag2ix[START_TAG], tag2ix[STOP_TAG])
     optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
     # Make sure prepare_sequence from earlier in the LSTM section is loaded
