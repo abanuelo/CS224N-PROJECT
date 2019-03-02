@@ -294,7 +294,7 @@ class BiLSTM_CRF(nn.Module):
 
 START_TAG = "<"
 STOP_TAG = ">"
-EMBEDDING_DIM = 4
+EMBEDDING_DIM = 3
 HIDDEN_DIM = 4
 
 # Make up some training data
@@ -307,20 +307,20 @@ HIDDEN_DIM = 4
 # )]
 training_data = [(list("กฎหมายกับการเบียดบังคนจน"), list("000001010010000010101"))]
 
-word_to_ix = {}
+char_to_ix = {}
 for sentence, tags in training_data:
-    for word in sentence:
-        if word not in word_to_ix:
-            word_to_ix[word] = len(word_to_ix)
+    for char in sentence:
+        if char not in char_to_ix:
+            char_to_ix[char] = len(char_to_ix)
 
 tag_to_ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
 
-model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
+model = BiLSTM_CRF(len(char_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
 optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
 # Check predictions before training
 with torch.no_grad():
-    precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
+    precheck_sent = prepare_sequence(training_data[0][0], char_to_ix)
     precheck_tags = torch.tensor([tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long)
     print(model(precheck_sent))
 
@@ -334,7 +334,7 @@ for epoch in range(
 
         # Step 2. Get our inputs ready for the network, that is,
         # turn them into Tensors of word indices.
-        sentence_in = prepare_sequence(sentence, word_to_ix)
+        sentence_in = prepare_sequence(sentence, char_to_ix)
         targets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long)
 
         # Step 3. Run our forward pass.
@@ -347,7 +347,7 @@ for epoch in range(
 
 # Check predictions after training
 with torch.no_grad():
-    precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
+    precheck_sent = prepare_sequence(training_data[0][0], char_to_ix)
     print(model(precheck_sent))
 # We got it!
 
