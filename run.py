@@ -5,29 +5,28 @@ run.py
 This file will initialize the dataset, character lookup table
 and run training/tsting
 """
-
-
-
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 import reader
-
-
 #####################################################################
 # Run training
 
 
-torch.manual_seed(1)
+def main():
+    torch.manual_seed(1)
 
-START_TAG = "σ"
-STOP_TAG = "ε"
-EMBEDDING_DIM = 5
-HIDDEN_DIM = 4
+    START_TAG = "σ"
+    STOP_TAG = "ε"
+    EMBEDDING_DIM = 5
+    HIDDEN_DIM = 4
 
-#Load training data
-training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
+    #Load training data
+    training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
+
+    char2ix, ix2char = getDictionary()
+    tag2ix = getTags()
 
 #load the 
 thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
@@ -76,4 +75,8 @@ for epoch in range(
 with torch.no_grad():
     precheck_sent = prepare_sequence(training_data[0][0], char2ix)
     print(model(precheck_sent))
+
+
+if __name__ == '__main__':
+    main()
 # We got it!
