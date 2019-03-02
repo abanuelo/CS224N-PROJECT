@@ -29,7 +29,6 @@ HIDDEN_DIM = 4
 #Load training data
 training_data = reader.return_training()
 
-
 def getDictionary():
 	#load the dictionary
 	thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
