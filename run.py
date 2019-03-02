@@ -15,20 +15,6 @@ import reader
 #####################################################################
 # Run training
 
-<<<<<<< HEAD
-
-torch.manual_seed(1)
-
-START_TAG = "σ"
-STOP_TAG = "ε"
-EMBEDDING_DIM = 5
-HIDDEN_DIM = 4
-
-#Load training data
-training_data = reader.return_training()
-
-=======
->>>>>>> 57f9eab45ec324bac72423d1d92cf59638bc5b14
 def getDictionary():
 	#load the dictionary
 	thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
@@ -104,4 +90,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-# We got it!
