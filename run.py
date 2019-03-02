@@ -27,18 +27,22 @@ EMBEDDING_DIM = 5
 HIDDEN_DIM = 4
 
 #Load training data
-training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
-
-#load the 
-thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
-eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
-extra_chars = "αβσε"
-all_chars = thai_chars+eng_chars+extra_chars
-char2ix = {c:i for i,c in enumerate(list(all_chars))}
-ix2char = {i:c for i,c in enumerate(list(all_chars))}
+training_data = reader.return_training()
 
 
-tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
+def getDictionary():
+	#load the dictionary
+	thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
+	eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
+	extra_chars = "αβσε"
+	all_chars = thai_chars+eng_chars+extra_chars
+	char2ix = {c:i for i,c in enumerate(list(all_chars))}
+	ix2char = {i:c for i,c in enumerate(list(all_chars))}
+	return char2ix, ix2char
+
+def getTags():
+	tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
+	return tag2ix
 
 model = BiLSTM_CRF(len(char2ix), tag2ix, EMBEDDING_DIM, HIDDEN_DIM)
 optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
