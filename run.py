@@ -17,7 +17,11 @@ from  BiLSTM_CRF import BiLSTM_CRF, prepare_sequence
 # Run training
 
 def getDictionary():
-	#load the dictionary
+	"""
+    Creates a lookup table for all characters
+    Greek characters are used as special symbols
+        (abbreviations, named entities, start, and stop)
+    """
 	thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
 	eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
 	extra_chars = "αβσε"

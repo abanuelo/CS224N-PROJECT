@@ -50,11 +50,12 @@ def log_sum_exp(vec):
 
 
 class BiLSTM_CRF(nn.Module):
-    def __init__(self, vocab_size, tag2ix, embedding_dim, hidden_dim, start_id, stop_id):
+    def __init__(self, char2ix:dict, tag2ix:dict, embedding_dim:int, hidden_dim:int, start_id:int, stop_id:int):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
-        self.vocab_size = vocab_size
+        self.char2ix = char2ix
+        self.vocab_size = len(self.char2ix)
         self.tag2ix = tag2ix
         self.tagset_size = len(tag2ix)
         self.start_id = start_id
@@ -197,5 +198,22 @@ class BiLSTM_CRF(nn.Module):
         # Find the best path, given the features.
         score, tag_seq = self._viterbi_decode(lstm_feats)
         return score, tag_seq
+
+    def load(self):
+        pass
+
+
+    def save(self, path: str):
+        """ Save the odel to a file.
+        @param path (str): path to the model
+        """
+        print('save model parameters to [%s]' % path, file=sys.stderr)
+
+        params = {
+            'args': dict(embed_dim=self.embedding_dim, hidden_size=self.hidden_dim),
+            'char2ix': self.char2ix
+        }
+
+        torch.save(params, path)
 
 
