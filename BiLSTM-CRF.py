@@ -120,6 +120,7 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
+import reader
 
 torch.manual_seed(1)
 
@@ -291,10 +292,9 @@ class BiLSTM_CRF(nn.Module):
 #####################################################################
 # Run training
 
-
 START_TAG = "<"
 STOP_TAG = ">"
-EMBEDDING_DIM = 3
+EMBEDDING_DIM = 5
 HIDDEN_DIM = 4
 
 # Make up some training data
@@ -305,7 +305,7 @@ HIDDEN_DIM = 4
 #     "georgia tech is a university in georgia".split(),
 #     "B I O O O O B".split()
 # )]
-training_data = [(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
+training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
 
 char_to_ix = {}
 for sentence, tags in training_data:
