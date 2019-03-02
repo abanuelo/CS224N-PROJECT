@@ -14,15 +14,12 @@ import torch.nn as nn
 import torch.optim as optim
 import reader
 
-torch.manual_seed(1)
-
-
 
 ######################################################################
 # Helper funtions
 
 def argmax(vec):
-    # return the argmax as a python int
+    # return the argmax index as a python int
     _, idx = torch.max(vec, 1)
     return idx.item()
 
@@ -33,13 +30,16 @@ def prepare_sequence(seq, to_ix):
     @Params: seq(string) -- string sequence
              to_ix(dict) -- lookup table
 
+    @Returns: torch.tensor -- tensor of inputs
+
     """
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
 
-# Compute log sum exp in a numerically stable way for the forward algorithm
+
 def log_sum_exp(vec):
+    # Compute log sum exp in a numerically stable way for the forward algorithm
     max_score = vec[0, argmax(vec)]
     max_score_broadcast = max_score.view(1, -1).expand(1, vec.size()[1])
     return max_score + \
@@ -50,13 +50,15 @@ def log_sum_exp(vec):
 
 
 class BiLSTM_CRF(nn.Module):
-    def __init__(self, vocab_size, tag2ix, embedding_dim, hidden_dim):
+    def __init__(self, vocab_size, tag2ix, embedding_dim, hidden_dim, start_id, stop_id):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
         self.tag2ix = tag2ix
         self.tagset_size = len(tag2ix)
+        self.start_id = start_id
+        self.stop_id = stop_id
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
@@ -72,12 +74,16 @@ class BiLSTM_CRF(nn.Module):
 
         # These two statements enforce the constraint that we never transfer
         # to the start tag and we never transfer from the stop tag
-        self.transitions.data[tag2ix[START_TAG], :] = -10000
-        self.transitions.data[:, tag2ix[STOP_TAG]] = -10000
+        self.transitions.data[self.start_id, :] = -10000
+        self.transitions.data[:, self.stop_id] = -10000
 
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
+        """
+        Initialize hidden states for the CRF
+        it is half the size of the LSTM hidden states
+        """
         return (torch.randn(2, 1, self.hidden_dim // 2),
                 torch.randn(2, 1, self.hidden_dim // 2))
 
@@ -85,7 +91,7 @@ class BiLSTM_CRF(nn.Module):
         # Do the forward algorithm to compute the partition function
         init_alphas = torch.full((1, self.tagset_size), -10000.)
         # START_TAG has all of the score.
-        init_alphas[0][self.tag2ix[START_TAG]] = 0.
+        init_alphas[0][self.start_id] = 0.
 
         # Wrap in a variable so that we will get automatic backprop
         forward_var = init_alphas
@@ -108,7 +114,7 @@ class BiLSTM_CRF(nn.Module):
                 # scores.
                 alphas_t.append(log_sum_exp(next_tag_var).view(1))
             forward_var = torch.cat(alphas_t).view(1, -1)
-        terminal_var = forward_var + self.transitions[self.tag2ix[STOP_TAG]]
+        terminal_var = forward_var + self.transitions[self.stop_id]
         alpha = log_sum_exp(terminal_var)
         return alpha
 
@@ -123,19 +129,23 @@ class BiLSTM_CRF(nn.Module):
     def _score_sentence(self, feats, tags):
         # Gives the score of a provided tag sequence
         score = torch.zeros(1)
-        tags = torch.cat([torch.tensor([self.tag2ix[START_TAG]], dtype=torch.long), tags])
+        tags = torch.cat([torch.tensor([self.start_id], dtype=torch.long), tags])
         for i, feat in enumerate(feats):
             score = score + \
                 self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
-        score = score + self.transitions[self.tag2ix[STOP_TAG], tags[-1]]
+        score = score + self.transitions[self.stop_id, tags[-1]]
         return score
 
     def _viterbi_decode(self, feats):
+        """
+        An implementation of the viterbi algorithm to 
+        decode the CRF.
+        """
         backpointers = []
 
         # Initialize the viterbi variables in log space
         init_vvars = torch.full((1, self.tagset_size), -10000.)
-        init_vvars[0][self.tag2ix[START_TAG]] = 0
+        init_vvars[0][self.start_id] = 0
 
         # forward_var at step i holds the viterbi variables for step i-1
         forward_var = init_vvars
@@ -159,7 +169,7 @@ class BiLSTM_CRF(nn.Module):
             backpointers.append(bptrs_t)
 
         # Transition to STOP_TAG
-        terminal_var = forward_var + self.transitions[self.tag2ix[STOP_TAG]]
+        terminal_var = forward_var + self.transitions[self.stop_id]
         best_tag_id = argmax(terminal_var)
         path_score = terminal_var[0][best_tag_id]
 
@@ -170,7 +180,7 @@ class BiLSTM_CRF(nn.Module):
             best_path.append(best_tag_id)
         # Pop off the start tag (we dont want to return that to the caller)
         start = best_path.pop()
-        assert start == self.tag2ix[START_TAG]  # Sanity check
+        assert start == self.start_id  # Sanity check
         best_path.reverse()
         return path_score, best_path
 

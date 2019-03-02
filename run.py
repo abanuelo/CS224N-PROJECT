@@ -11,6 +11,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 import reader
+from  BiLSTM_CRF import BiLSTM_CRF, prepare_sequence
 
 #####################################################################
 # Run training
@@ -25,30 +26,31 @@ def getDictionary():
 	ix2char = {i:c for i,c in enumerate(list(all_chars))}
 	return char2ix, ix2char
 
-def getTags():
-	tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
-	return tag2ix
 
-
-# Check predictions before training
 def checkPredictions(training_data, char2ix, tag2ix):
+    # Check predictions before training
     with torch.no_grad():
         precheck_sent = prepare_sequence(training_data[0][0], char2ix)
         print(model(precheck_sent))
 
 def train():
+    ##########PARAMETER SETTINGS########
     START_TAG = "σ"
     STOP_TAG = "ε"
     EMBEDDING_DIM = 5
     HIDDEN_DIM = 4
     EPOCH = 10
+    #####################################
 
     #Load training data
     training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
-    tag2ix = getTags()
+    
+    #initialize look up tables 
+    char2ix, ix2char = getDictionary()
+    tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
 
     #initialize model and optimizer TODO Adam optimizer 
-    model = BiLSTM_CRF(len(char2ix), tag2ix, EMBEDDING_DIM, HIDDEN_DIM)
+    model = BiLSTM_CRF(len(char2ix), tag2ix, EMBEDDING_DIM, HIDDEN_DIM, tag2ix[START_TAG], tag2ix[STOP_TAG])
     optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
     # Make sure prepare_sequence from earlier in the LSTM section is loaded
@@ -76,15 +78,17 @@ def train():
     checkPredictions(training_data, char2ix, tag2ix)
 
 def main():
-    
     args = set(sys.argv)
-    if 'debug' in set:
+    if 'debug' in args:
+        print("---------------------------")
+        print("### Running Debug mode! ###")
+        print("---------------------------")
         torch.manual_seed(1)
 
-    if 'train' in set:
+    if 'train' in args:
         train()
 
-    if 'test' in set:
+    if 'test' in args:
         test()
 
 
