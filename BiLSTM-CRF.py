@@ -215,7 +215,10 @@ class BiLSTM_CRF(nn.Module):
 
     def _get_lstm_features(self, sentence):
         self.hidden = self.init_hidden()
+        print("sentence", sentence)
+        print("original char_emd", self.word_embeds(sentence).shape)
         embeds = self.word_embeds(sentence).view(len(sentence), 1, -1)
+        print("embeds", embeds.shape)
         lstm_out, self.hidden = self.lstm(embeds, self.hidden)
         lstm_out = lstm_out.view(len(sentence), self.hidden_dim)
         lstm_feats = self.hidden2tag(lstm_out)
@@ -292,8 +295,8 @@ class BiLSTM_CRF(nn.Module):
 #####################################################################
 # Run training
 
-START_TAG = "<"
-STOP_TAG = ">"
+START_TAG = "σ"
+STOP_TAG = "ε"
 EMBEDDING_DIM = 5
 HIDDEN_DIM = 4
 
@@ -307,11 +310,13 @@ HIDDEN_DIM = 4
 # )]
 training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
 
-thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙"
-eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
-extra_chars = "αβ"
+thai_chars = r"กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙"
+eng_chars = r" !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
+extra_chars = r"αβσε"
 all_chars = thai_chars+eng_chars+extra_chars
 char2ix = {c:i for i,c in enumerate(list(all_chars))}
+
+
 ix2char = {i:c for i,c in enumerate(list(all_chars))}
 # for sentence, tags in training_data:
 #     for char in sentence:
