@@ -215,10 +215,7 @@ class BiLSTM_CRF(nn.Module):
 
     def _get_lstm_features(self, sentence):
         self.hidden = self.init_hidden()
-        print("sentence", sentence)
-        print("original char_emd", self.word_embeds(sentence).shape)
         embeds = self.word_embeds(sentence).view(len(sentence), 1, -1)
-        print("embeds", embeds.shape)
         lstm_out, self.hidden = self.lstm(embeds, self.hidden)
         lstm_out = lstm_out.view(len(sentence), self.hidden_dim)
         lstm_feats = self.hidden2tag(lstm_out)
@@ -336,7 +333,7 @@ with torch.no_grad():
 
 # Make sure prepare_sequence from earlier in the LSTM section is loaded
 for epoch in range(
-        300):  # again, normally you would NOT do 300 epochs, it is toy data
+        10):  # again, normally you would NOT do 300 epochs, it is toy data
     for sentence, tags in training_data:
         # Step 1. Remember that Pytorch accumulates gradients.
         # We need to clear them out before each instance
@@ -352,8 +349,10 @@ for epoch in range(
 
         # Step 4. Compute the loss, gradients, and update the parameters by
         # calling optimizer.step()
+        print('epoch: ' +str(epoch)+' loss: ' +str(loss))
         loss.backward()
         optimizer.step()
+
 
 # Check predictions after training
 with torch.no_grad():
