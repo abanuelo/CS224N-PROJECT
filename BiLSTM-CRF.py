@@ -305,7 +305,7 @@ HIDDEN_DIM = 4
 #     "georgia tech is a university in georgia".split(),
 #     "B I O O O O B".split()
 # )]
-training_data = [(list("กฎหมายกับการเบียดบังคนจน"), list("000001010010000010101"))]
+training_data = [(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
 
 word_to_ix = {}
 for sentence, tags in training_data:
