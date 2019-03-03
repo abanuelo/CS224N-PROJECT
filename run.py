@@ -55,13 +55,16 @@ def checkPredictions(training_data, char2ix, tag2ix):
         print(model(precheck_sent))
 
 def train(args:dict):
-    ##########PARAMETER SETTINGS########
+    ##########DEFAULT PARAMETER SETTINGS########
     START_TAG = "σ"
     STOP_TAG = "ε"
     EMBEDDING_DIM = 5
     HIDDEN_DIM = 4
-    EPOCH = int(args['--max-epoch'])
+    EPOCH = 100
     #####################################
+
+    if args['--max-epoch']:
+        EPOCH = int(args['--max-epoch'])
 
     #Load training data
     training_data = reader.return_training(args['--train-input'], args['--train-gold'])
@@ -69,6 +72,12 @@ def train(args:dict):
     #initialize look up tables 
     char2ix, ix2char = getDictionary()
     tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
+
+    #Allow Debug mode
+    if args['--debug']:
+        seed = 1234
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
 
     #initialize model and optimizer TODO Adam optimizer 
     model = BiLSTM_CRF(char2ix, tag2ix, EMBEDDING_DIM, HIDDEN_DIM, tag2ix[START_TAG], tag2ix[STOP_TAG])
