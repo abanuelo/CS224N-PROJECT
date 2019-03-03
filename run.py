@@ -14,6 +14,7 @@ Options:
     --batch-size=<x>              Set Batch size
     --valid-niter=<x>             Set maximum iterations per epoch
     --max-epoch=<x>               Set maximum number of epochs
+    --save-path=<file>            Sets the save path for the model
     --cuda                        Use the gpu
 
 This file will initialize the dataset, character lookup table
