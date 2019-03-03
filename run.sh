@@ -14,3 +14,4 @@ elif [ "$1" = "test_local" ]; then
     python run.py test model.bin ./data/dev_small.txt ./data/dev_small_output_gold.txt outputs/test_outputs_local.txt 
 else
 	echo "Invalid Option Selected"
+fi

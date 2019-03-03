@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Usage:
-    run.py train
     run.py train --train-input=<file> --train-gold=<file> [options]
     run.py test --test-input=<file> --test-gold=<file> [options]
 
@@ -64,7 +63,7 @@ def train(args:dict):
     #####################################
 
     #Load training data
-    training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
+    training_data = reader.return_training(args['--train-input'], args['--train-gold'])
     
     #initialize look up tables 
     char2ix, ix2char = getDictionary()
@@ -116,7 +115,7 @@ def compute_F1_scores():
         print("dummy")
 
 #Similar to the Decode function within assignment a5
-def test():
+def test(args:dict):
     print("load test source input from [{}]".format(args['TEST_INPUT_FILE']), file=sys.stderr)
     test_data_src = reader.read_corpus(args['TEST_INPUT_FILE'], source='src')
     if args['TEST_GOLD_FILE']:
