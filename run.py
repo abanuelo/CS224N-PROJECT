@@ -59,7 +59,7 @@ def train(args:dict):
     STOP_TAG = "ε"
     EMBEDDING_DIM = 5
     HIDDEN_DIM = 4
-    EPOCH = 10
+    EPOCH = int(args['--max-epoch'])
     #####################################
 
     #Load training data
@@ -74,8 +74,7 @@ def train(args:dict):
     optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
     # Make sure prepare_sequence from earlier in the LSTM section is loaded
-    for epoch in range(
-            EPOCH):  # again, normally you would NOT do 300 epochs, it is toy data
+    for epoch in range(EPOCH):  # again, normally you would NOT do 300 epochs, it is toy data
         for sentence, tags in training_data:
             # Step 1. Remember that Pytorch accumulates gradients.
             # We need to clear them out before each instance
@@ -91,7 +90,7 @@ def train(args:dict):
 
             # Step 4. Compute the loss, gradients, and update the parameters by
             # calling optimizer.step()
-            print('epoch: ' +str(epoch)+' loss: ' +str(loss))
+            print('epoch: ' +str(epoch) + ' loss: ' + str(loss))
             loss.backward()
             optimizer.step()
 
