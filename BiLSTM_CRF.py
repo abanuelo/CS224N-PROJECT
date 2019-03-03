@@ -61,7 +61,7 @@ class BiLSTM_CRF(nn.Module):
         self.start_id = start_id
         self.stop_id = stop_id
 
-        self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
+        self.word_embeds = nn.Embedding(self.vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
                             num_layers=1, bidirectional=True)
 

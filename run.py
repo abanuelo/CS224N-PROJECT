@@ -7,6 +7,7 @@ and run training/tsting
 """
 import sys
 import torch
+from itertools import zip_longest
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
@@ -80,6 +81,44 @@ def train():
             optimizer.step()
 
     checkPredictions(training_data, char2ix, tag2ix)
+
+def write_to_output(test_data_tgt, char2ix, tag2ix):
+    """ Computes the F1 Score reported by the trained model while writing 
+    to the necessary output file for testing purposes
+    """
+    prepared_test_data_tgt = []
+
+    with open(args['OUTPUT_FILE'], 'w') as f:
+        for sent in test_data_tgt:
+            char_seq = prepare_sequence(sent, char2ix)
+            prepared_test_data_tgt.append(char_seq)
+            tokenized_output = ''.join(model(prepared_test_data_tgt))
+            f.write(tokenized_output + '\n')
+
+def compute_F1_scores():
+    for tgt, gold in zip_longest(args['OUTPUT_FILE'], args['TEST_GOLD_FILE']):
+        print("dummy")
+
+#Similar to the Decode function within assignment a5
+def test():
+    print("load test source input from [{}]".format(args['TEST_INPUT_FILE']), file=sys.stderr)
+    test_data_src = reader.read_corpus(args['TEST_INPUT_FILE'], source='src')
+    if args['TEST_GOLD_FILE']:
+        print("load test target output from [{}]".format(args['TEST_GOLD_FILE']), file=sys.stderr)
+        test_data_tgt = reader.read_corpus(args['TEST_GOLD_FILE'], source='tgt')
+
+    print("load model from {}".format(args['MODEL_PATH']), file=sys.stderr)
+    model = BiLSTM_CRF.load(args['MODEL_PATH'])
+
+    if args['--cuda']:
+        model = model.to(torch.device("cuda:0"))
+
+    if args['TEST_TARGET_FILE']:
+        write_to_output(test_data_tgt, char2ix, tag2ix)
+
+    F1 = compute_F1_scores()
+    print("F1 Score: {}".format(F1))
+
 
 def main():
     args = set(sys.argv)
