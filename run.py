@@ -11,9 +11,10 @@ Options:
     --train-gold=<file>           Training gold path
     --test-input=<file>           Testing input path
     --test-gold=<file>            Testing gold path
-    --batch-size=<b>
-    --valid-niter=<i>
-    --max-epoch=<e>
+    --batch-size=<x>              Set Batch size
+    --valid-niter=<x>             Set maximum iterations per epoch
+    --max-epoch=<x>               Set maximum number of epochs
+    --cuda                        Use the gpu
 
 This file will initialize the dataset, character lookup table
 and run training/tsting           
@@ -73,9 +74,15 @@ def train(args:dict):
     model = BiLSTM_CRF(char2ix, tag2ix, EMBEDDING_DIM, HIDDEN_DIM, tag2ix[START_TAG], tag2ix[STOP_TAG])
     optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
 
+    #Set device
+    device = torch.device("cuda:0" if args['--cuda'] else "cpu")
+    print('Use device: %s' % device, file=sys.stderr)
+    model = model.to(device)
+
     # Make sure prepare_sequence from earlier in the LSTM section is loaded
     for epoch in range(
             EPOCH):  # again, normally you would NOT do 300 epochs, it is toy data
+        epoch_loss = 0.
         for sentence, tags in training_data:
             # Step 1. Remember that Pytorch accumulates gradients.
             # We need to clear them out before each instance
@@ -91,9 +98,10 @@ def train(args:dict):
 
             # Step 4. Compute the loss, gradients, and update the parameters by
             # calling optimizer.step()
-            print('epoch: ' +str(epoch)+' loss: ' +str(loss))
+            epoch_loss += float(loss[0])
             loss.backward()
             optimizer.step()
+        print('epoch: ' +str(epoch)+' loss: ' +str(epoch_loss))
 
     checkPredictions(training_data, char2ix, tag2ix)
 
@@ -136,19 +144,6 @@ def test(args:dict):
 
 
 def main():
-    # args = set(sys.argv)
-    # if 'debug' in args:
-    #     print("---------------------------")
-    #     print("### Running Debug mode! ###")
-    #     print("---------------------------")
-    #     torch.manual_seed(1)
-
-    # if 'train' in args:
-    #     train()
-
-    # if 'test' in args:
-    #     test()
-    #print(__doc__)
     args = docopt(__doc__)
     if args['train']:
         train(args)
