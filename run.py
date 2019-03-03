@@ -96,8 +96,23 @@ def write_to_output(test_data_tgt, char2ix, tag2ix):
             f.write(tokenized_output + '\n')
 
 def compute_F1_scores():
+    F1 = 0
     for tgt, gold in zip_longest(args['OUTPUT_FILE'], args['TEST_GOLD_FILE']):
-        print("dummy")
+        characters = list(tgt.strip('\n'))
+        characters_gold = list(gold.strip('\n'))
+        TP, FP, FN = 0
+        for i in range(len(characters)):
+            if characters[i] == characters_gold[j] and characters[i] == '1':
+                TP += 1
+            elif characters[i] != characters_gold[j] and characters[i] == '0':
+                FP += 1 
+            elif characters[i] != characters_gold[j] and characters[i] == '1':
+                FN += 1
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        F1 = (2*precision*recall) / (precision+recall)
+    return F1
+
 
 #Similar to the Decode function within assignment a5
 def test():
