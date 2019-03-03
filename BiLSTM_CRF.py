@@ -13,6 +13,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 import reader
+import sys
 
 
 ######################################################################
@@ -199,8 +200,16 @@ class BiLSTM_CRF(nn.Module):
         score, tag_seq = self._viterbi_decode(lstm_feats)
         return score, tag_seq
 
-    def load(self):
-        pass
+    @staticmethod
+    def load(model_path: str):
+        """ Load the model from a file.
+        @param model_path (str): path to model
+        """
+        params = torch.load(model_path, map_location=lambda storage, loc: storage)
+        args = params['args']
+        model = BiLSTM_CRF(**args)
+        model.load_state_dict(params['state_dict'])
+        return model
 
 
     def save(self, path: str):
@@ -210,8 +219,9 @@ class BiLSTM_CRF(nn.Module):
         print('save model parameters to [%s]' % path, file=sys.stderr)
 
         params = {
-            'args': dict(embed_dim=self.embedding_dim, hidden_size=self.hidden_dim),
-            'char2ix': self.char2ix
+            'args': dict(char2ix=self.char2ix, tag2ix=self.tag2ix, embed_dim=self.embedding_dim, 
+                            hidden_size=self.hidden_dim, start_id=self.start_id, stop_id=self.stop_id),
+            'state_dict': self.state_dict()
         }
 
         torch.save(params, path)

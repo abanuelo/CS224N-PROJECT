@@ -1,11 +1,26 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-run.py
--------------------
+Usage:
+    run.py train --train-input=<file> --train-gold=<file> [options]
+    run.py test --test-input=<file> --test-gold=<file> [options]
+
+Options:
+    -d --debug                    Enable Debug mode
+    --train-input=<file>          Training input path
+    --train-gold=<file>           Training gold path
+    --test-input=<file>           Testing input path
+    --test-gold=<file>            Testing gold path
+    --batch-size=<b>
+    --valid-niter=<i>
+    --max-epoch=<e>
+
 This file will initialize the dataset, character lookup table
-and run training/tsting
+and run training/tsting           
+
 """
 import sys
+from docopt import docopt
 import torch
 from itertools import zip_longest
 import torch.autograd as autograd
@@ -38,7 +53,7 @@ def checkPredictions(training_data, char2ix, tag2ix):
         precheck_sent = prepare_sequence(training_data[0][0], char2ix)
         print(model(precheck_sent))
 
-def train():
+def train(args:dict):
     ##########PARAMETER SETTINGS########
     START_TAG = "σ"
     STOP_TAG = "ε"
@@ -48,7 +63,7 @@ def train():
     #####################################
 
     #Load training data
-    training_data = reader.return_training()#[(list("ประเพณีการเทศน์มหาชาติ"), list("0000001001000010000001"))]
+    training_data = reader.return_training(args['--train-input'], args['--train-gold'])
     
     #initialize look up tables 
     char2ix, ix2char = getDictionary()
@@ -115,7 +130,7 @@ def compute_F1_scores():
 
 
 #Similar to the Decode function within assignment a5
-def test():
+def test(args:dict):
     print("load test source input from [{}]".format(args['TEST_INPUT_FILE']), file=sys.stderr)
     test_data_src = reader.read_corpus(args['TEST_INPUT_FILE'], source='src')
     if args['TEST_GOLD_FILE']:
@@ -136,18 +151,26 @@ def test():
 
 
 def main():
-    args = set(sys.argv)
-    if 'debug' in args:
-        print("---------------------------")
-        print("### Running Debug mode! ###")
-        print("---------------------------")
-        torch.manual_seed(1)
+    # args = set(sys.argv)
+    # if 'debug' in args:
+    #     print("---------------------------")
+    #     print("### Running Debug mode! ###")
+    #     print("---------------------------")
+    #     torch.manual_seed(1)
 
-    if 'train' in args:
-        train()
+    # if 'train' in args:
+    #     train()
 
-    if 'test' in args:
-        test()
+    # if 'test' in args:
+    #     test()
+    #print(__doc__)
+    args = docopt(__doc__)
+    if args['train']:
+        train(args)
+    elif args['test']:
+        test(args)
+    else:
+        raise RuntimeError('invalid run mode')
 
 
 if __name__ == '__main__':

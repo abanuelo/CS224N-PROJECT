@@ -2,7 +2,7 @@ import os
 from itertools import zip_longest
 
 
-def return_training():
+def return_training(input_path, gold_path):
 	training_data = []
 	#Reading in Data from the Train Set
 	with open("./data/train_small.txt") as textfile1, open("./data/train_small_output_gold.txt") as textfile2: 
