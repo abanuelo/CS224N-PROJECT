@@ -1,4 +1,6 @@
 import os
+import math
+import numpy as np
 import torch
 from itertools import zip_longest
 import torch.autograd as autograd
@@ -35,13 +37,13 @@ def batch_iter(data, batch_size:int, shuffle=False):
     for i in range(batch_num):
         indices = index_array[i * batch_size: (i + 1) * batch_size]
         examples = [data[idx] for idx in indices]
-        examples = sorted(batch, key=lambda e: len(e[0]), reverse=True)
+        examples = sorted(examples, key=lambda e: len(e[0]), reverse=True)
         characters = [e[0] for e in examples]
         gold = [e[1] for e in examples]
        	yield characters, gold
 
 
-def pad_ids(ids:List[List[int]], pad_id):
+def pad_ids(ids:list, pad_id):
 	"""
 	Pads an id list to the longest sentence
 
@@ -51,12 +53,11 @@ def pad_ids(ids:List[List[int]], pad_id):
 	max_len = len(ids[0])
 	sents_padded = []
 
-    for sent in sents:
-        sents_padded.append(sent + [pad_id]*(max_len-len(sent)))
+	for sent in ids:
+		sents_padded.append(sent + [pad_id]*(max_len-len(sent)))
+	return sents_padded 
 
-    return sents_padded 
-
-def sents2tensor(sents: List[str], char2ix:dict, pad_id:int, device: torch.device):
+def sents2tensor(sents: list, char2ix:dict, pad_id:int, device: torch.device):
 	"""
 	Creates a padded tensor from a list of sentences
 
@@ -68,7 +69,7 @@ def sents2tensor(sents: List[str], char2ix:dict, pad_id:int, device: torch.devic
 	@return a tensor of dim (max_string_length, batch_size)
 	"""
 	ids = [[char2ix[c] for c in s] for s in sents]
-	padded = pad_ids(ids)
+	padded = pad_ids(ids, pad_id)
 	return torch.tensor(padded, dtype=torch.long, device=device)
 
 
