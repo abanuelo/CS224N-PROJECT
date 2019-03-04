@@ -51,10 +51,10 @@ def pad_ids(ids:List[List[int]], pad_id):
 	max_len = len(ids[0])
 	sents_padded = []
 
-    for sent in sents:
-        sents_padded.append(sent + [pad_id]*(max_len-len(sent)))
+	for s in sents:
+		sents_padded.append(s + [pad_id]*(max_len-len(s)))
 
-    return sents_padded 
+	return sents_padded 
 
 def sents2tensor(sents: List[str], char2ix:dict, pad_id:int, device: torch.device):
 	"""
