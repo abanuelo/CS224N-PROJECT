@@ -1,12 +1,26 @@
+import os
 import torch
 from itertools import zip_longest
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 
+def get_data(input_path, gold_path):
+	data = []
+	#Reading in Data from the Train Set
+	with open(input_path) as textfile1, open(gold_path) as textfile2: 
+	    for x, y in zip_longest(textfile1, textfile2):
+	    	characters = list(x.strip('\n'))
+	    	gold = list(y.strip('\n'))
+	    	tuple_char = (characters, gold)
+	    	data.append(tuple_char)
+
+	return data
+
+
 def batch_iter(data, batch_size:int, shuffle=False):
     """ Yield batches of source and target sentences reverse sorted by length (largest to smallest).
-    @param data (list of (src_sent, tgt_sent)): list of tuples containing source and target sentence
+    @param data tuple: list of tuples containing source and target sentence
     @param batch_size (int): batch size
     @param shuffle (boolean): whether to randomly shuffle the dataset
 
@@ -20,9 +34,11 @@ def batch_iter(data, batch_size:int, shuffle=False):
 
     for i in range(batch_num):
         indices = index_array[i * batch_size: (i + 1) * batch_size]
-        batch = [data[idx] for idx in indices]
-        batch = sorted(batch, key=lambda e: len(e[0]), reverse=True)
-        yield batch
+        examples = [data[idx] for idx in indices]
+        examples = sorted(batch, key=lambda e: len(e[0]), reverse=True)
+        characters = [e[0] for e in examples]
+        gold = [e[1] for e in examples]
+       	yield characters, gold
 
 
 def pad_ids(ids:List[List[int]], pad_id):
