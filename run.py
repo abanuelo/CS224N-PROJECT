@@ -49,7 +49,7 @@ import torch.nn as nn
 import torch.optim as optim
 #import reader
 from  BiLSTM_CRF import BiLSTM_CRF, prepare_sequence
-from utils import batch_iter, get_data
+from utils import batch_iter, get_data, sents2tensor
 
 #####################################################################
 # Run training
@@ -109,6 +109,7 @@ def train(args:dict):
     START_TAG = "σ"
     STOP_TAG = "ε"
     PADDING = "π"
+    TARGET_PADDING = -1
     #####################################
 
     embedding_dim = int(args['--embed-size'])
@@ -145,7 +146,7 @@ def train(args:dict):
     #initialize variables for training
     num_trial = 0
     train_iter = patience = cum_loss = report_loss = report_tgt_chars = cum_tgt_chars = 0
-    cum_examples = report_examples = epoch = valid_num = 0
+    cum_examples = report_examples = valid_num = 0
     hist_valid_scores = []
     train_time = begin_time = time.time()
 
@@ -166,13 +167,11 @@ def train(args:dict):
 
 
             #Step 2
-            sentence_in = sents2tensor(sentence, char2ix, char2ix[PADDING], model.device())
-            targets = torch.tensor([tag2ix[t] for t in tags], dtype=torch.long, device=model.device())
+            sentence_in = sents2tensor(sentence, char2ix, char2ix[PADDING], device)
+            targets = sents2tensor(tags, tag2ix, TARGET_PADDING, device)
+            #targets = torch.tensor([[tag2ix[c] for c in t] for t in tags], dtype=torch.long, device=device)
 
             
-
-
-
             # Step 3. Run our forward pass.
             loss = model.neg_log_likelihood(sentence_in, targets)
             batch_loss = loss.sum()
