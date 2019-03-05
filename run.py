@@ -36,7 +36,7 @@ This file will initialize the dataset, character lookup table
 and run training/tsting           
 
 
-# includes modified code from assignment 4 & 5, CS224N (Winter 2019) 
+# includes modified code from assignment 4 & 5, CS224N (Winter 2019) Stanford university
 """
 import math
 import time
@@ -54,16 +54,16 @@ from utils import batch_iter, get_data, sents2tensor
 #####################################################################
 # Run training
 
-def getDictionary():
+def get_dictionary():
 	"""
     Creates a lookup table for all characters
     Greek characters are used as special symbols
         (abbreviations, named entities, start, and stop)
     """
-	thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
-	eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
-	extra_chars = "αβσεπ"
-	all_chars = thai_chars+eng_chars+extra_chars
+    extra_chars = "παβσε"
+    thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
+    eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
+    all_chars = extra_chars+thai_chars+eng_chars
 	char2ix = {c:i for i,c in enumerate(list(all_chars))}
 	ix2char = {i:c for i,c in enumerate(list(all_chars))}
 	return char2ix, ix2char
@@ -125,7 +125,7 @@ def train(args:dict):
     training_data = get_data(args['--train-input'], args['--train-gold'])
     
     #initialize look up tables 
-    char2ix, ix2char = getDictionary()
+    char2ix, ix2char = get_dictionary()
     tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
 
     #Allow Debug mode
