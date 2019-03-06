@@ -16,15 +16,23 @@ def log_sum_exp(x):
 	m = torch.max(x, -1)[0]
 	return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(-1)), -1))
 
+# class Embedding(nn.Module):
+# 	def __init__(self, embedding_dim, vocab_size):
+# 		super(Embedding, self).__init__()
+# 		self.embeding = nn.Embedding(vocab_size, embedding_dim)
+
+# 	def forward(inp):
+# 		return self.embeding(inp)
+
+
 class BiLSTM(nn.Module):
-	def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, pad_id):
+	def __init__(self, num_tag, embedding_dim, hidden_dim, pad_id):
 		super(BiLSTM, self).__init__()
 		self.embedding_dim = embedding_dim
 		self.hidden_dim = hidden_dim
 		self.pad_id = pad_id
 		
 		#character embeddings
-		self.embeding = nn.Embedding(vocab_size, embedding_dim)  
 		self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
 							num_layers=1, bidirectional=True, batch_first = True)
 
@@ -32,24 +40,20 @@ class BiLSTM(nn.Module):
 		self.hidden2tag = nn.Linear(hidden_dim, num_tag)
 
 
-	def forward(self, inp, mask):
+	def forward(self, inp_embed, mask):
 		"""
 		@param inp(tensor) -- input of the 
 		@param mask (tensor ) -- a tensor that is 1 if the character 
 								is not padding 0 otherwise
-		"""
-		X = self.embeding(inp)
+		""" 
 		lengths = mask.sum(1).int()
-		X_packed = pack_padded_sequence(X, lengths, batch_first = True)
+		X_packed = pack_padded_sequence(inp_embed, lengths, batch_first = True)
 		hidden, _ = self.lstm(X_packed)
 		hidden, _ = pad_packed_sequence(hidden, padding_value = self.pad_id, batch_first = True)
 		h_out = self.hidden2tag(hidden) #(batch_size, max_sent_len, num_tag)
 		h_out *= mask.unsqueeze(2)
 		return h_out
-		
 
-	def decode():
-		pass
 
 
 
@@ -128,27 +132,42 @@ class CRF(nn.Module):
 		return best_path
 
 
-
-	# def decode(self):
-	# 	pass
+	def score(self, h_tag, gold, mask): # calculate the score of a given sequence
+		score = Tensor(self.batch_size).fill_(0.)
+		h_tag = h_tag.unsqueeze(3)
+		trans = self.trans.unsqueeze(2)
+		for t in range(h_tag.size(1)): # recursion through the sequence
+			mask_t = mask[:, t]
+			emit_t = torch.cat([h_tag[t, g[t + 1]] for h_tag, g in zip(h, gold)])
+			trans_t = torch.cat([trans[g[t + 1], g[t]] for g in gold])
+			score += (emit_t + trans_t) * mask_t
+		last_tag = gold.gather(1, mask.sum(1).long().unsqueeze(1)).squeeze(1)
+		score += self.trans[self.stop_id, last_tag]
+		return score
 
 
 
 
 class BiLSTM_CRF(nn.Module):
-	def __init__(self, vocab_size, embedding_dim, hidden_dim, num_tags, start_id, stop_id, pad_id):
+	def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id, mask):
 		super(BiLSTM_CRF, self).__init__()
-		self.lstm = BiLSTM()
-		self.crf = CRF()
+		self.embeding = nn.Embedding(vocab_size, embedding_dim)
+		self.lstm = BiLSTM(vocab_size, num_tag, embedding_dim, hidden_dim, pad_id)
+		self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
+		self.mask = mask
+
+
+	def forward(self, inp, gold): # for training
+        inp_embed = self.embeding(inp)
+        h = self.rnn(inp_embed, self.mask)
+        Z = self.crf.forward(h, self.mask)
+        score = self.crf.score(h, gold, self.mask)
+        return Z - score # NLL loss
 		
-	def forward(self, input):
-		mask = 1-sents.data.eq(pad_id).float()
-		h_out = self.lstm(input, mask)
-		return crf(h_out, mask)
-
-	# def decode(self):
-	# 	pass
-
+	def decode(self, inp):
+		inp_embed = self.embeding(inp)
+		h_out = self.lstm(inp_embed, self.mask)
+		return crf(h_out, self.mask)
 
 	@staticmethod
 	def load(model_path: str):

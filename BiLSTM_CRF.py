@@ -27,31 +27,6 @@ class rnn_crf(nn.Module):
         h = self.rnn(cx, wx, mask)
         return self.crf.decode(h, mask)
 
-<<<<<<< HEAD
-class embed(nn.Module):
-    def __init__(self, char_vocab_size, word_vocab_size):
-        super().__init__()
-
-        # architecture
-        if EMBED_UNIT == "char":
-            self.embed = cnn_embed(char_vocab_size, EMBED_SIZE)
-        if EMBED_UNIT == "word":
-            self.embed = nn.Embedding(word_vocab_size, EMBED_SIZE, padding_idx = PAD_IDX)
-        if EMBED_UNIT == "char+word":
-            self.char_embed = cnn_embed(char_vocab_size, EMBED_SIZE // 2)
-            self.word_embed = nn.Embedding(word_vocab_size, EMBED_SIZE // 2, padding_idx = PAD_IDX)
-
-    def forward(self, cx, wx):
-        if EMBED_UNIT == "char":
-            h = self.embed(cx)
-        if EMBED_UNIT == "word":
-            h = self.embed(wx)
-        if EMBED_UNIT == "char+word":
-            ch = self.char_embed(cx)
-            wh = self.word_embed(wx)
-            h = torch.cat([ch, wh], 2)
-        return h
-=======
 # class embed(nn.Module):
 #     def __init__(self, char_vocab_size, word_vocab_size):
 #         super().__init__()
@@ -75,7 +50,7 @@ class embed(nn.Module):
 #             wh = self.word_embed(wx)
 #             h = torch.cat([ch, wh], 2)
 #         return h
->>>>>>> 6578c8536427f9f593c6bfa5f2f00487d52e183b
+
 
 # class cnn_embed(nn.Module):
 #     def __init__(self, dim_in, dim_out):
@@ -107,21 +82,14 @@ class embed(nn.Module):
 #         h = h.view(BATCH_SIZE, -1, h.size(1)) # [B, word_seq_len, dim_out]
 #         return h
 
-<<<<<<< HEAD
-class rnn_embed(nn.Module):
-    def __init__(self, dim_in, dim_out):
-        pass
 
-    def forward(self, x):
-        pass
-=======
 # class rnn_embed(nn.Module):
 #     def __init__(self, dim_in, dim_out):
 #         pass
 
 #     def forward(self, x):
 #         pass
->>>>>>> 6578c8536427f9f593c6bfa5f2f00487d52e183b
+
 
 class rnn(nn.Module):
     def __init__(self, char_vocab_size, word_vocab_size, num_tags):
