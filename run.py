@@ -137,7 +137,7 @@ def train(args:dict):
         torch.cuda.manual_seed(seed)
 
     #initialize model
-    model = BiLSTM_CRF(len(char2ix), len(tag2ix), embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG], tag2ix[PADDING])
+    model = BiLSTM_CRF(len(char2ix), len(tag2ix), embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG], char2ix[PADDING])
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args['--lr']))
 
     #Set device
@@ -175,7 +175,8 @@ def train(args:dict):
 
             
             # Step 3. Run our forward pass.
-            loss = torch.mean(model(sentence_in, targets))
+            mask = 1-sentence_in.data.eq(char2ix[PADDING]).float()
+            loss = torch.mean(model(sentence_in, targets, mask))
             batch_loss = loss.sum()
             loss = batch_loss/batch_size
 

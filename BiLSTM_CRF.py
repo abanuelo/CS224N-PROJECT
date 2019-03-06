@@ -155,7 +155,7 @@ class BiLSTM_CRF(nn.Module):
         self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
 
 
-    def forward(self, inp, gold): # for training
+    def forward(self, inp, gold, mask): # for training
         mask = 1-sentence_in.data.eq(pad_id).float()
         inp_embed = self.embeding(inp)
         h_tag = self.rnn(inp_embed, mask)
@@ -163,7 +163,7 @@ class BiLSTM_CRF(nn.Module):
         score = self.crf.score(h_tag, gold, mask)
         return Z - score # NLL loss
         
-    def decode(self, inp):
+    def decode(self, inp, mask):
         mask = 1-sentence_in.data.eq(pad_id).float()
         inp_embed = self.embeding(inp)
         h_out = self.lstm(inp_embed, mask)
