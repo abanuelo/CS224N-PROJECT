@@ -12,7 +12,7 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
-import reader
+#import reader
 import sys
 
 
@@ -143,7 +143,6 @@ class BiLSTM_CRF(nn.Module):
         An implementation of the viterbi algorithm to 
         decode the CRF.
         """
-        for b in 
         backpointers = []
 
         # Initialize the viterbi variables in log space

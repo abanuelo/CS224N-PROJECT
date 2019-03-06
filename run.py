@@ -126,7 +126,7 @@ def train(args:dict):
     
     #initialize look up tables 
     char2ix, ix2char = get_dictionary()
-    tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3}
+    tag2ix = {"0": 0, "1": 1, START_TAG: 2, STOP_TAG: 3, PADDING: 4}
 
     #Allow Debug mode
     if args['--debug']:
