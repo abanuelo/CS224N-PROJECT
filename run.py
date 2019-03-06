@@ -168,6 +168,7 @@ def train(args:dict):
 
             #Step 2
             sentence_in = sents2tensor(sentence, char2ix, char2ix[PADDING], device)
+            #mask = 1-sentence_in.data.eq(char2ix[PADDING]).float()
             targets = sents2tensor(tags, tag2ix, TARGET_PADDING, device)
             #targets = torch.tensor([[tag2ix[c] for c in t] for t in tags], dtype=torch.long, device=device)
 
@@ -384,34 +385,6 @@ def write_to_output(test_data_tgt, char2ix, tag2ix):
             tokenized_output = ''.join(model(prepared_test_data_tgt))
             f.write(tokenized_output + '\n')
 
-def compute_F1_scores():
-    F1_micro = 0
-    F1_macro = 0
-    F1_arr = []
-    TP_macro, FP_macro, FN_macro = 0
-    for tgt, gold in zip_longest(args['OUTPUT_FILE'], args['TEST_GOLD_FILE']):
-        characters = list(tgt.strip('\n'))
-        characters_gold = list(gold.strip('\n'))
-        TP, FP, FN = 0
-        for i in range(len(characters)):
-            if characters[i] == characters_gold[j] and characters[i] == '1':
-                TP += 1
-                TP_macro += 1
-            elif characters[i] != characters_gold[j] and characters[i] == '0':
-                FP += 1 
-                FP_macro += 1
-            elif characters[i] != characters_gold[j] and characters[i] == '1':
-                FN += 1
-                FN_macro += 1
-        precision = TP / (TP + FP)
-        recall = TP / (TP + FN)
-        F1 = (2*precision*recall) / (precision+recall)
-        F1_arr.append(F1)
-    F1_micro = sum(F1_arr) / len(F1_arr)
-    precision_macro = TP_macro / (TP_macro + FP_macro)
-    recall_macro = TP_macro / (TP_macro + FN_macro)
-    F1_macro = (2*precision_macro*recall_macro) / (precision_macro+recall_macro)
-    return F1_micro, F1_macro
 
 
 #Similar to the Decode function within assignment a5

@@ -73,6 +73,25 @@ class CRF(nn.Module):
 
 	def forward(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
 		#initialize alphas 
+		score = torch.full((self.batch_size, self.num_tags), -10000., dtype=torch.float)
+		score[:, self.stop_id] = 0. #set the stop score to 0
+		#trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
+
+		# iterate over sentence (max_sent_len)
+		for t in range(h_tag.size(1)):  
+			mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
+			emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
+			score_t_trans = score.unsqueeze(1) + self.trans
+			score_t = score_t_trans + emit_t
+			score_t = log_sum_exp(score_t) # [batch_size, num_tags, num_tags] -> [batch_size, num_tags]
+			score = score_t * mask_t + score * (1 - mask_t)
+		score += self.trans[self.stop_id]
+		score = log_sum_exp(score)
+		return score
+
+
+	def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
+		#initialize alphas 
 		bptr = torch.tensor([],dtype=torch.long)
 		score = torch.full((self.batch_size, self.num_tags), -10000., dtype=torch.float)
 		score[:, self.stop_id] = 0. #set the stop score to 0
@@ -106,7 +125,9 @@ class CRF(nn.Module):
 				best_path[b].append(x)
 			best_path[b].pop() #pop the start token
 			best_path[b].reverse()
-		return score, best_path
+		return best_path
+
+
 
 	# def decode(self):
 	# 	pass
