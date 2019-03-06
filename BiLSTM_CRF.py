@@ -147,27 +147,27 @@ class CRF(nn.Module):
 
 
 
-
 class BiLSTM_CRF(nn.Module):
-	def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id, mask):
+	def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id):
 		super(BiLSTM_CRF, self).__init__()
 		self.embeding = nn.Embedding(vocab_size, embedding_dim)
 		self.lstm = BiLSTM(vocab_size, num_tag, embedding_dim, hidden_dim, pad_id)
 		self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
-		self.mask = mask
 
 
 	def forward(self, inp, gold): # for training
-        inp_embed = self.embeding(inp)
-        h = self.rnn(inp_embed, self.mask)
-        Z = self.crf.forward(h, self.mask)
-        score = self.crf.score(h, gold, self.mask)
-        return Z - score # NLL loss
+		mask = 1-sentence_in.data.eq(pad_id).float()
+		inp_embed = self.embeding(inp)
+		h_tag = self.rnn(inp_embed, mask)
+		Z = self.crf.forward(h_tag, mask)
+		score = self.crf.score(h_tag, gold, mask)
+		return Z - score # NLL loss
 		
 	def decode(self, inp):
+		mask = 1-sentence_in.data.eq(pad_id).float()
 		inp_embed = self.embeding(inp)
-		h_out = self.lstm(inp_embed, self.mask)
-		return crf(h_out, self.mask)
+		h_out = self.lstm(inp_embed, mask)
+		return self.crf(h_out, mask)
 
 	@staticmethod
 	def load(model_path: str):

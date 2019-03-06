@@ -2,35 +2,35 @@
 # -*- coding: utf-8 -*-
 """
 Usage:
-	run.py train --train-input=<file> --train-gold=<file> [options]
-	run.py test --test-input=<file> --test-gold=<file> [options]
+	run.py train --train-input=<file> --train-gold=<file>  [options]
+	run.py test --test-input=<file> --test-gold=<file>  [options]
 
 Options:
-	-d --debug					Enable Debug mode
-	--train-input=<file>		  Training input path
-	--train-gold=<file>		   Training gold path
-	--test-input=<file>		   Testing input path
-	--test-gold=<file>			Testing gold path
-	--seed=<int>				  seed [default: 0]
-	--batch-size=<int>			batch size [default: 32]
-	--embed-size=<int>					  embedding size [default: 256]
-	--hidden-size=<int>					 hidden size [default: 256]
-	--clip-grad=<float>					 gradient clipping [default: 5.0]
-	--log-every=<int>					   log every [default: 10]
-	--max-epoch=<int>					   max epoch [default: 30]
-	--input-feed							use input feeding
-	--patience=<int>						wait for how many iterations to decay learning rate [default: 5]
-	--max-num-trial=<int>				   terminate training after how many trials [default: 5]
-	--lr-decay=<float>					  learning rate decay [default: 0.5]
-	--beam-size=<int>					   beam size [default: 5]
-	--sample-size=<int>					 sample size [default: 5]
-	--lr=<float>							learning rate [default: 0.001]
-	--uniform-init=<float>				  uniformly initialize all parameters [default: 0.1]
-	--save-to=<file>						model save path [default: model.bin]
-	--valid-niter=<int>					 perform validation after how many iterations [default: 2000]
-	--dropout=<float>					   dropout [default: 0.3]
-	--max-decoding-time-step=<int>		  maximum number of decoding time steps [default: 70]
-	--cuda						Use the gpu
+    -d --debug                       Enable Debug mode
+	--train-input=<file>             Training input path
+	--train-gold=<file>              Training gold path
+	--test-input=<file>              Testing input path
+	--test-gold=<file>               Testing gold path
+	--seed=<int>                     seed  [default: 0]
+	--batch-size=<int>               batch size  [default: 32]
+	--embed-size=<int>               embedding size  [default: 256]
+	--hidden-size=<int>              hidden size  [default: 256]
+	--clip-grad=<float>              gradient clipping  [default: 5.0]
+	--log-every=<int>                log every  [default: 10]
+	--max-epoch=<int>                max epoch  [default: 30]
+	--input-feed                     use input feeding
+	--patience=<int>                 wait for how many iterations to decay learning rate  [default: 5]
+	--max-num-trial=<int>            terminate training after how many trials  [default: 5]
+	--lr-decay=<float>               learning rate decay  [default: 0.5]
+	--beam-size=<int>                beam size  [default: 5]
+	--sample-size=<int>              sample size  [default: 5]
+	--lr=<float>                     learning rate [default: 0.001]
+	--uniform-init=<float>           uniformly initialize all parameters  [default: 0.1]
+	--save-to=<file>                 model save path [default: model.bin]
+	--valid-niter=<int>              perform validation after how many iterations [default: 2000]
+	--dropout=<float>                dropout  [default: 0.3]
+	--max-decoding-time-step=<int>   maximum number of decoding time steps  [default: 70]
+	--cuda                           Use the gpu
 
 This file will initialize the dataset, character lookup table
 and run training/tsting		   
@@ -48,7 +48,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 #import reader
-from  BiLSTM_CRF import BiLSTM_CRF, prepare_sequence
+from  BiLSTM_CRF import BiLSTM_CRF
 from utils import batch_iter, get_data, sents2tensor
 
 #####################################################################
@@ -110,7 +110,9 @@ def train(args:dict):
 	STOP_TAG = "ε"
 	PADDING = "π"
 	TARGET_PADDING = -1
+	print(args)
 	#####################################
+
 
 	embedding_dim = int(args['--embed-size'])
 	hidden_dim = int(args['--hidden-size'])
@@ -134,8 +136,8 @@ def train(args:dict):
 		torch.manual_seed(seed)
 		torch.cuda.manual_seed(seed)
 
-	#initialize model and optimizer TODO Adam optimizer 
-	model = BiLSTM_CRF(char2ix, tag2ix, embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG])
+	#initialize model
+	model = BiLSTM_CRF(len(char2ix), len(tag2ix), embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG], tag2ix[PADDING])
 	optimizer = torch.optim.Adam(model.parameters(), lr=float(args['--lr']))
 
 	#Set device
@@ -168,13 +170,12 @@ def train(args:dict):
 
 			#Step 2
 			sentence_in = sents2tensor(sentence, char2ix, char2ix[PADDING], device)
-			#mask = 1-sentence_in.data.eq(char2ix[PADDING]).float()
 			targets = sents2tensor(tags, tag2ix, TARGET_PADDING, device)
 			#targets = torch.tensor([[tag2ix[c] for c in t] for t in tags], dtype=torch.long, device=device)
 
 			
 			# Step 3. Run our forward pass.
-			loss = model.neg_log_likelihood(sentence_in, targets)
+			loss = torch.mean(model(sentence_in, targets))
 			batch_loss = loss.sum()
 			loss = batch_loss/batch_size
 
