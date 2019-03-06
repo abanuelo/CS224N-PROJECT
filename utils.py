@@ -73,7 +73,7 @@ def sents2tensor(sents: list, char2ix:dict, pad_id:int, device: torch.device):
     ids = [[char2ix[c] for c in s] for s in sents]
     padded = pad_ids(ids, pad_id)
     data = torch.tensor(padded, dtype=torch.long, device=device)
-    return torch.tensor(padded, dtype=torch.long, device=device)
+    return data
 
 # def sents2packed(sents:list, to_ix:dict, device: torch.device):
 #   """

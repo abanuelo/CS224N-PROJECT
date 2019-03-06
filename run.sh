@@ -9,7 +9,7 @@ elif [ "$1" = "test" ]; then
 elif [ "$1" = "train_local" ]; then
 	touch model.bin
 	python run.py train --train-input=./data/train_small.txt --train-gold=./data/train_small_output_gold.txt \
-        #--batch-size=1 --valid-niter=100 --max-epoch=101 --save-to=./model.bin
+        --batch-size=3 --valid-niter=100 --max-epoch=101 --save-to=./model.bin
 elif [ "$1" = "test_local" ]; then
 	mkdir -p outputs
     touch outputs/test_local_outputs.txt

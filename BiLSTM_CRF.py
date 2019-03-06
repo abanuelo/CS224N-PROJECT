@@ -133,38 +133,37 @@ class CRF(nn.Module):
 
 
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
-        score = Tensor(self.batch_size).fill_(0.)
+        score = torch.full((self.batch_size,), 0., dtype=torch.float)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
-        for t in range(h_tag.size(1)): # recursion through the sequence
+        for t in range(h_tag.size(1)-1): # iterate through except the last element
             mask_t = mask[:, t]
-            emit_t = torch.cat([h_tag[t, g[t + 1]] for h_tag, g in zip(h, gold)])
-            trans_t = torch.cat([trans[g[t + 1], g[t]] for g in gold])
+            emit_t = torch.cat([h_tag[t, gold[t + 1]] for h_tag, gold in zip(h_tag, gold)])
+            trans_t = torch.cat([trans[gold[t + 1], gold[t]] for gold in gold])
             score += (emit_t + trans_t) * mask_t
-        last_tag = gold.gather(1, mask.sum(1).long().unsqueeze(1)).squeeze(1)
+        last_tag = gold.gather(1, mask.sum(1).long().unsqueeze(1)-1).squeeze(1)
         score += self.trans[self.stop_id, last_tag]
         return score
 
 
 
 class BiLSTM_CRF(nn.Module):
-    def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id):
+    def __init__(self, vocab_size, batch_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id):
         super(BiLSTM_CRF, self).__init__()
+        self.pad_id = pad_id
         self.embeding = nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = BiLSTM(vocab_size, num_tag, embedding_dim, hidden_dim, pad_id)
+        self.lstm = BiLSTM(num_tag, embedding_dim, hidden_dim, pad_id)
         self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
 
 
     def forward(self, inp, gold, mask): # for training
-        mask = 1-sentence_in.data.eq(pad_id).float()
         inp_embed = self.embeding(inp)
-        h_tag = self.rnn(inp_embed, mask)
+        h_tag = self.lstm(inp_embed, mask)
         Z = self.crf.forward(h_tag, mask)
         score = self.crf.score(h_tag, gold, mask)
         return Z - score # NLL loss
         
     def decode(self, inp, mask):
-        mask = 1-sentence_in.data.eq(pad_id).float()
         inp_embed = self.embeding(inp)
         h_out = self.lstm(inp_embed, mask)
         return self.crf(h_out, mask)
