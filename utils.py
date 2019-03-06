@@ -65,13 +65,28 @@ def sents2tensor(sents: list, char2ix:dict, pad_id:int, device: torch.device):
 	@param sents -- a list of strings
 	@param char2ix -- a dictionary from character to id
 	@param pad_id -- id of padtoken
-	@param device -- device od the model
+	@param device -- device of the model
 
 	@return a tensor of dim (max_string_length, batch_size)
 	"""
+	
 	ids = [[char2ix[c] for c in s] for s in sents]
 	padded = pad_ids(ids, pad_id)
+	data = torch.tensor(padded, dtype=torch.long, device=device)
 	return torch.tensor(padded, dtype=torch.long, device=device)
+
+# def sents2packed(sents:list, to_ix:dict, device: torch.device):
+# 	"""
+# 	Creates a packed tensor from a list of sentences
+
+# 	@param sents -- a list of strings (assumes it is ordered by length)
+# 	@param char2ix -- a dictionary from character to id
+# 	@param device -- device of the model
+
+# 	@return a tensor of dim (max_string_length, batch_size)
+# 	"""
+# 	ids = [torch.tensor([to_ix[c] for c in s], dtype=torch.long, device=device) for s in sents]
+# 	return nn.utils.rnn.pack_sequence(ids)
 
 
 
