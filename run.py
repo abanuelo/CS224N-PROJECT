@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 """
 Usage:
-	run.py train --train-input=<file> --train-gold=<file>  [options]
-	run.py test --test-input=<file> --test-gold=<file>  [options]
+	run.py train --train-input=<file> --train-gold=<file> [options]
+	run.py test --test-input=<file> --test-gold=<file> [options]
 
 Options:
     -d --debug                       Enable Debug mode
-	--train-input=<file>             Training input path
-	--train-gold=<file>              Training gold path
-	--test-input=<file>              Testing input path
-	--test-gold=<file>               Testing gold path
-	--seed=<int>                     seed  [default: 0]
-	--batch-size=<int>               batch size  [default: 32]
-	--embed-size=<int>               embedding size  [default: 256]
-	--hidden-size=<int>              hidden size  [default: 256]
-	--clip-grad=<float>              gradient clipping  [default: 5.0]
-	--log-every=<int>                log every  [default: 10]
+    --train-input=<file>             Training input path
+    --train-gold=<file>              Training gold path
+    --test-input=<file>              Testing input path
+    --test-gold=<file>               Testing gold path
+    --seed=<int>                     seed  [default: 0]
+    --batch-size=<int>               batch size  [default: 32]
+    --embed-size=<int>               embedding size  [default: 256]
+    --hidden-size=<int>              hidden size  [default: 256] 
+    --clip-grad=<float>              gradient clipping  [default: 5.0]
+    --log-every=<int>                log every  [default: 10]
 	--max-epoch=<int>                max epoch  [default: 30]
 	--input-feed                     use input feeding
 	--patience=<int>                 wait for how many iterations to decay learning rate  [default: 5]
