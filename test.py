@@ -24,7 +24,7 @@ tag2ix_old = {"0": 0, "1": 1, 'σ': 2, 'ε': 3}
 #lstm = BiLSTM(len(char2ix), len(tag2ix), embed_size, hidden_size, 0)
 #crf = CRF(len(tag2ix), batch_size, tag2ix['σ'], tag2ix['ε'], tag2ix['π'])
 
-new_model = BiLSTM_CRF(len(char2ix),batch_size, len(tag2ix), embed_size, hidden_size, tag2ix['σ'], tag2ix['ε'], tag2ix['π'])
+new_model = BiLSTM_CRF(len(char2ix), len(tag2ix), embed_size, hidden_size, tag2ix['σ'], tag2ix['ε'], tag2ix['π'])
 
 #old_model = old_BiLSTM_CRF(char2ix, tag2ix_old, embed_size, hidden_size, tag2ix_old['σ'], tag2ix_old['ε'])
 

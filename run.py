@@ -50,6 +50,7 @@ from itertools import zip_longest
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 #import reader
 from  BiLSTM_CRF import BiLSTM_CRF
 from utils import batch_iter, get_data, sents2tensor
@@ -67,6 +68,8 @@ class Run():
         self.char2id, self.id2char = self.get_dictionary()
         self.tag2id = {"0": 0, "1": 1, self.start_tag: 2, self.stop_tag: 3, self.padding: 4}
         self.device = torch.device("cuda:0" if self.args['--cuda'] else "cpu")
+        self.model = None
+        self.optimizer = None
 
     def get_dictionary(self):
         """
@@ -82,15 +85,16 @@ class Run():
         id2char = {i:c for i,c in enumerate(list(all_chars))}
         return char2id, id2char
 
-    def evaluate_ppl(self, model, dev_data, batch_size=32):
+    def evaluate_ppl(self, dev_data, batch_size:int =32):  #batch_size=32):
         """ Evaluate perplexity on dev sentences
-        @param model (NMT): NMT Model
+
         @param dev_data (list of (src_sent, tgt_sent)): list of tuples containing source and target sentence
-        @param batch_size (batch size)
+        @param batch_size (int): batchsize of dev set
+
         @returns ppl (perplixty on dev sentences)
         """
-        was_training = model.training
-        model.eval()
+        was_training = self.model.training
+        self.model.eval()
 
         cum_loss = 0.
         cum_gold_chars = 0.
@@ -101,7 +105,7 @@ class Run():
                 inp_tensor = sents2tensor(inp, self.char2id, self.char2id[self.padding], self.device)
                 gold_tensor = sents2tensor(gold, self.tag2id, self.target_padding, self.device)
                 mask = 1-inp_tensor.data.eq(self.char2id[self.padding]).float()
-                loss = -model(inp_tensor, gold_tensor, mask).sum()
+                loss = -self.model(inp_tensor, gold_tensor, mask).sum()
 
                 cum_loss += loss.item()
                 gold_char_num_to_predict = sum(len(s[1:]) for s in gold)  # omitting leading `<s>`
@@ -110,7 +114,7 @@ class Run():
             ppl = np.exp(cum_loss / cum_gold_chars)
 
         if was_training:
-            model.train()
+            self.model.train()
         return ppl
 
 
@@ -118,7 +122,7 @@ class Run():
         # Check predictions before training
         with torch.no_grad():
             precheck_sent = prepare_sequence(training_data[0][0], self.char2id)
-            print(model(precheck_sent))
+            print(self.model(precheck_sent))
 
     def train(self):
         embedding_dim = int(self.args['--embed-size'])
@@ -129,7 +133,7 @@ class Run():
         log_every = int(self.args['--log-every'])
         valid_niter = int(self.args['--valid-niter'])
         model_save_path = self.args['--save-to']
-        dev_data = (self.args['--dev-input'], self.args['--dev-gold'])
+        dev_data = get_data(self.args['--dev-input'], self.args['--dev-gold'])
 
         #Load training data
         training_data = get_data(self.args['--train-input'], self.args['--train-gold'])
@@ -141,13 +145,13 @@ class Run():
             torch.cuda.manual_seed(seed)
 
         #initialize model
-        model = BiLSTM_CRF(len(self.char2id),train_batch_size, len(self.tag2id), embedding_dim,
+        self.model = BiLSTM_CRF(len(self.char2id), len(self.tag2id), embedding_dim,
                      hidden_dim, self.tag2id[self.start_tag], self.tag2id[self.stop_tag], self.char2id[self.padding])
-        optimizer = torch.optim.Adam(model.parameters(), lr=float(self.args['--lr']))
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=float(self.args['--lr']))
 
         #Set self.device
         print('Use self.device: %s' % self.device, file=sys.stderr)
-        model = model.to(self.device)
+        self.model = self.model.to(self.device)
 
         #initialize variables for training
         num_trial = 0
@@ -165,8 +169,8 @@ class Run():
             for sentence, tags in batch_iter(training_data, train_batch_size, shuffle=False):
                 train_iter += 1
                 #Step 1:
-                optimizer.zero_grad()
-                #model.zero_grad()
+                self.optimizer.zero_grad()
+                #self.model.zero_grad()
 
                 batch_size = len(sentence) #This might be different from train_batch_size in the last iteration
 
@@ -177,18 +181,18 @@ class Run():
 
                 # Step 3. Run our forward pass.
                 mask = 1-sentence_in.data.eq(self.char2id[self.padding]).float()
-                loss = torch.sum(model(sentence_in, targets, mask))
+                loss = torch.sum(self.model(sentence_in, targets, mask))
                 batch_loss = loss.sum()
                 loss = batch_loss/batch_size
 
                 # Step 4. Compute the loss, gradients, and update the parameters by
-                # calling optimizer.step()
+                # calling self.optimizer.step()
                 #epoch_loss += float(loss[0])
                 loss.backward()
 
                 #clip gradinet
-                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
-                optimizer.step()
+                grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), clip_grad)
+                self.optimizer.step()
 
                 batch_losses_val = batch_loss.item()
                 report_loss += batch_losses_val
@@ -217,54 +221,54 @@ class Run():
                                                                              np.exp(cum_loss / cum_gold_chars),
                                                                              cum_examples), file=sys.stderr)
 
-                cum_loss = cum_examples = cum_gold_chars = 0.
-                valid_num += 1
+                    cum_loss = cum_examples = cum_gold_chars = 0.
+                    valid_num += 1
 
-                print('begin validation ...', file=sys.stderr)
-                dev_ppl = self.evaluate_ppl(model, dev_data, batch_size=128)
-                valid_metric = -dev_ppl
+                    print('begin validation ...', file=sys.stderr)
+                    dev_ppl = self.evaluate_ppl(dev_data, batch_size=128)
+                    valid_metric = -dev_ppl
 
-                print('validation: iter %d, dev. ppl %f' % (train_iter, dev_ppl), file=sys.stderr)
+                    print('validation: iter %d, dev. ppl %f' % (train_iter, dev_ppl), file=sys.stderr)
 
-                is_better = len(hist_valid_scores) == 0 or valid_metric > max(hist_valid_scores)
-                hist_valid_scores.append(valid_metric)
+                    is_better = len(hist_valid_scores) == 0 or valid_metric > max(hist_valid_scores)
+                    hist_valid_scores.append(valid_metric)
 
-                if is_better:
-                    patience = 0
-                    print('save currently the best model to [%s]' % model_save_path, file=sys.stderr)
-                    model.save(model_save_path)
-
-                    # also save the optimizers' state
-                    torch.save(optimizer.state_dict(), model_save_path + '.optim')
-                elif patience < int(self.args['--patience']):
-                    patience += 1
-                    print('hit patience %d' % patience, file=sys.stderr)
-
-                    if patience == int(self.args['--patience']):
-                        num_trial += 1
-                        print('hit #%d trial' % num_trial, file=sys.stderr)
-                        if num_trial == int(self.args['--max-num-trial']):
-                            print('early stop!', file=sys.stderr)
-                            exit(0)
-
-                        # decay lr, and restore from previously best checkpoint
-                        lr = optimizer.param_groups[0]['lr'] * float(self.args['--lr-decay'])
-                        print('load previously best model and decay learning rate to %f' % lr, file=sys.stderr)
-
-                        # load model
-                        params = torch.load(model_save_path, map_location=lambda storage, loc: storage)
-                        model.load_state_dict(params['state_dict'])
-                        model = model.to(self.device)
-
-                        print('restore parameters of the optimizers', file=sys.stderr)
-                        optimizer.load_state_dict(torch.load(model_save_path + '.optim'))
-
-                        # set new lr
-                        for param_group in optimizer.param_groups:
-                            param_group['lr'] = lr
-
-                        # reset patience
+                    if is_better:
                         patience = 0
+                        print('save currently the best model to [%s]' % model_save_path, file=sys.stderr)
+                        self.model.save(model_save_path)
+
+                        # also save the optimizers' state
+                        torch.save(self.optimizer.state_dict(), model_save_path + '.optim')
+                    elif patience < int(self.args['--patience']):
+                        patience += 1
+                        print('hit patience %d' % patience, file=sys.stderr)
+
+                        if patience == int(self.args['--patience']):
+                            num_trial += 1
+                            print('hit #%d trial' % num_trial, file=sys.stderr)
+                            if num_trial == int(self.args['--max-num-trial']):
+                                print('early stop!', file=sys.stderr)
+                                exit(0)
+
+                            # decay lr, and restore from previously best checkpoint
+                            lr = self.optimizer.param_groups[0]['lr'] * float(self.args['--lr-decay'])
+                            print('load previously best model and decay learning rate to %f' % lr, file=sys.stderr)
+
+                            # load model
+                            params = torch.load(model_save_path, map_location=lambda storage, loc: storage)
+                            self.model.load_state_dict(params['state_dict'])
+                            self.model = self.model.to(self.device)
+
+                            print('restore parameters of the optimizers', file=sys.stderr)
+                            self.optimizer.load_state_dict(torch.load(model_save_path + '.optim'))
+
+                            # set new lr
+                            for param_group in self.optimizer.param_groups:
+                                param_group['lr'] = lr
+
+                            # reset patience
+                            patience = 0
 
 
         print('reached maximum number of epochs!', file=sys.stderr)
@@ -280,7 +284,7 @@ class Run():
             for sent in test_data_tgt:
                 char_seq = prepare_sequence(sent, self.char2id)
                 prepared_test_data_tgt.append(char_seq)
-                tokenized_output = ''.join(model(prepared_test_data_tgt))
+                tokenized_output = ''.join(self.model(prepared_test_data_tgt))
                 f.write(tokenized_output + '\n')
 
 
@@ -297,7 +301,7 @@ class Run():
         model = BiLSTM_CRF.load(self.args['MODEL_PATH'])
 
         if self.args['--cuda']:
-            model = model.to(torch.self.device("cuda:0"))
+            self.model = self.model.to(torch.self.device("cuda:0"))
 
         if self.args['TEST_TARGET_FILE']:
             write_to_output(test_data_tgt, self.char2id, self.tag2id)

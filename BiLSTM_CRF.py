@@ -6,7 +6,7 @@ https://pytorch.org/tutorials/beginner/nlp/advanced_tutorial.html
 https://github.com/threelittlemonkeys/lstm-crf-pytorch
 """
 
-
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -50,18 +50,17 @@ class BiLSTM(nn.Module):
         X_packed = pack_padded_sequence(inp_embed, lengths, batch_first = True)
         hidden, _ = self.lstm(X_packed)
         hidden, _ = pad_packed_sequence(hidden, padding_value = self.pad_id, batch_first = True)
-        h_out = self.hidden2tag(hidden) #(batch_size, max_sent_len, num_tag)
-        h_out *= mask.unsqueeze(2)
-        return h_out
+        h_tag = self.hidden2tag(hidden) #(batch_size, max_sent_len, num_tag)
+        h_tag *= mask.unsqueeze(2)
+        return h_tag
 
 
 
 
 class CRF(nn.Module):
-    def __init__(self, num_tags, batch_size, start_id, stop_id, pad_id):
+    def __init__(self, num_tags, start_id, stop_id, pad_id):
         super(CRF, self).__init__()
         self.num_tags = num_tags
-        self.batch_size = batch_size
         self.start_id = start_id
         self.stop_id = stop_id
         self.pad_id = pad_id
@@ -77,7 +76,8 @@ class CRF(nn.Module):
 
     def forward(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)
         #initialize alphas 
-        score = torch.full((self.batch_size, self.num_tags), -10000., dtype=torch.float)
+        batch_size = len(h_tag)
+        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float)
         score[:, self.stop_id] = 0. #set the stop score to 0
         trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
         # iterate over sentence (max_sent_len)
@@ -95,8 +95,9 @@ class CRF(nn.Module):
 
     def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
         #initialize alphas 
+        batch_size = len(h_tag)
         bptr = torch.tensor([],dtype=torch.long)
-        score = torch.full((self.batch_size, self.num_tags), -10000., dtype=torch.float)
+        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float)
         score[:, self.stop_id] = 0. #set the stop score to 0
         #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
@@ -116,7 +117,7 @@ class CRF(nn.Module):
 
         bptr = bptr.tolist()
         best_path = [[i] for i in best_tag.tolist()]
-        for b in range(self.batch_size):
+        for b in range(batch_size):
             x = best_tag[b] # best tag
             y = int(mask[b].sum().item()) #get length
             for bptr_t in reversed(bptr[b][:y]):
@@ -128,7 +129,8 @@ class CRF(nn.Module):
 
 
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
-        score = torch.full((self.batch_size,), 0., dtype=torch.float)
+        batch_size = len(h_tag)
+        score = torch.full((batch_size,), 0., dtype=torch.float)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
         for t in range(h_tag.size(1)-1): # iterate through except the last element
@@ -143,12 +145,23 @@ class CRF(nn.Module):
 
 
 class BiLSTM_CRF(nn.Module):
-    def __init__(self, vocab_size, batch_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id):
+    def __init__(self, vocab_size, num_tag, embedding_dim, hidden_dim, start_id, stop_id, pad_id):
         super(BiLSTM_CRF, self).__init__()
+        #parameters
+        self.vocab_size = vocab_size
+        self.num_tag = num_tag
+        self.embedding_dim = embedding_dim
+        self.hidden_dim = hidden_dim
+        self.start_id = start_id
+        self.stop_id = stop_id
         self.pad_id = pad_id
+
+
+
+        #Models
         self.embeding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = BiLSTM(num_tag, embedding_dim, hidden_dim, pad_id)
-        self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
+        self.crf = CRF(num_tag, start_id, stop_id, pad_id)
 
 
 
@@ -181,10 +194,9 @@ class BiLSTM_CRF(nn.Module):
         @param path (str): path to the model
         """
         print('save model parameters to [%s]' % path, file=sys.stderr)
-
         params = {
-            'args': dict(char2ix=self.char2ix, tag2ix=self.tag2ix, embed_dim=self.embedding_dim, 
-                            hidden_size=self.hidden_dim, start_id=self.start_id, stop_id=self.stop_id),
+            'args': dict(vocab_size=self.vocab_size, num_tag=self.num_tag, embedding_dim=self.embedding_dim,
+                            start_id=self.start_id, stop_id=self.stop_id, pad_id=self.pad_id),
             'state_dict': self.state_dict()
         }
 
