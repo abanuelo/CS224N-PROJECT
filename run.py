@@ -88,7 +88,7 @@ class Run():
     def evaluate_ppl(self, dev_data, batch_size:int =32):  #batch_size=32):
         """ Evaluate perplexity on dev sentences
 
-        @param dev_data (list of (src_sent, tgt_sent)): list of tuples containing source and target sentence
+        @param dev_data (list of (src_sent, gold_sent)): list of tuples containing source and target sentence
         @param batch_size (int): batchsize of dev set
 
         @returns ppl (perplixty on dev sentences)
@@ -155,7 +155,7 @@ class Run():
 
         #initialize variables for training
         num_trial = 0
-        train_iter = patience = cum_loss = report_loss = report_tgt_chars = cum_tgt_chars = 0
+        train_iter = patience = cum_loss = report_loss = report_gold_chars = cum_gold_chars = 0
         cum_examples = report_examples = valid_num = 0
         hist_valid_scores = []
         train_time = begin_time = time.time()
@@ -181,7 +181,7 @@ class Run():
 
                 # Step 3. Run our forward pass.
                 mask = 1-sentence_in.data.eq(self.char2id[self.padding]).float()
-                loss = torch.sum(self.model(sentence_in, targets, mask))
+                loss = torch.mean(self.model(sentence_in, targets, mask))
                 batch_loss = loss.sum()
                 loss = batch_loss/batch_size
 
@@ -198,25 +198,25 @@ class Run():
                 report_loss += batch_losses_val
                 cum_loss += batch_losses_val
                 report_examples += batch_size
-                tgt_chars_num_to_predict = sum(len(c) for c in tags)
-                cum_tgt_chars += tgt_chars_num_to_predict
-                report_tgt_chars += tgt_chars_num_to_predict
+                gold_chars_num_to_predict = sum(len(c) for c in tags)
+                cum_gold_chars += gold_chars_num_to_predict
+                report_gold_chars += gold_chars_num_to_predict
                 cum_examples += batch_size
 
                 if train_iter % log_every == 0:
                     print('epoch %d, iter %d, avg. loss %.2f, avg. ppl %.2f ' \
-                          'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (epoch, train_iter,
+                          'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (e, train_iter,
                                                                                              report_loss / report_examples,
-                                                                                             math.exp(report_loss / report_tgt_chars),
+                                                                                             math.exp(report_loss / report_gold_chars),
                                                                                              cum_examples,
-                                                                                             report_tgt_chars / (time.time() - train_time),
+                                                                                             report_gold_chars / (time.time() - train_time),
                                                                                              time.time() - begin_time), file=sys.stderr)
 
                     train_time = time.time()
-                    report_loss = report_tgt_chars = report_examples = 0.
+                    report_loss = report_gold_chars = report_examples = 0.
 
                 if train_iter % valid_niter == 0:
-                    print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (epoch, train_iter,
+                    print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (e, train_iter,
                                                                              cum_loss / cum_examples,
                                                                              np.exp(cum_loss / cum_gold_chars),
                                                                              cum_examples), file=sys.stderr)
@@ -274,17 +274,17 @@ class Run():
         print('reached maximum number of epochs!', file=sys.stderr)
 
 
-    def write_to_output(self, test_data_tgt):
+    def write_to_output(self, test_data_gold):
         """ Computes the F1 Score reported by the trained model while writing 
         to the necessary output file for testing purposes
         """
-        prepared_test_data_tgt = []
+        prepared_test_data_gold = []
 
         with open(self.args['OUTPUT_FILE'], 'w') as f:
-            for sent in test_data_tgt:
+            for sent in test_data_gold:
                 char_seq = prepare_sequence(sent, self.char2id)
-                prepared_test_data_tgt.append(char_seq)
-                tokenized_output = ''.join(self.model(prepared_test_data_tgt))
+                prepared_test_data_gold.append(char_seq)
+                tokenized_output = ''.join(self.model(prepared_test_data_gold))
                 f.write(tokenized_output + '\n')
 
 
@@ -295,7 +295,7 @@ class Run():
         test_data_src = reader.read_corpus(self.args['TEST_INPUT_FILE'], source='src')
         if self.args['TEST_GOLD_FILE']:
             print("load test target output from [{}]".format(self.args['TEST_GOLD_FILE']), file=sys.stderr)
-            test_data_tgt = reader.read_corpus(self.args['TEST_GOLD_FILE'], source='tgt')
+            test_data_gold = reader.read_corpus(self.args['TEST_GOLD_FILE'], source='gold')
 
         print("load model from {}".format(self.args['MODEL_PATH']), file=sys.stderr)
         model = BiLSTM_CRF.load(self.args['MODEL_PATH'])
@@ -304,7 +304,7 @@ class Run():
             self.model = self.model.to(torch.self.device("cuda:0"))
 
         if self.args['TEST_TARGET_FILE']:
-            write_to_output(test_data_tgt, self.char2id, self.tag2id)
+            write_to_output(test_data_gold, self.char2id, self.tag2id)
 
         F1_micro, F1_macro = compute_F1_scores()
         print("F1 Score: {}".format(F1))
