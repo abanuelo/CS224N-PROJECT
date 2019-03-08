@@ -133,6 +133,7 @@ class Run():
         log_every = int(self.args['--log-every'])
         valid_niter = int(self.args['--valid-niter'])
         model_save_path = self.args['--save-to']
+        print(model_save_path)
         dev_data = get_data(self.args['--dev-input'], self.args['--dev-gold'])
 
         #Load training data
