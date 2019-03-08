@@ -26,19 +26,20 @@ tag2ix_old = {"0": 0, "1": 1, 'σ': 2, 'ε': 3}
 
 new_model = BiLSTM_CRF(len(char2ix),batch_size, len(tag2ix), embed_size, hidden_size, tag2ix['σ'], tag2ix['ε'], tag2ix['π'])
 
-old_model = old_BiLSTM_CRF(char2ix, tag2ix_old, embed_size, hidden_size, tag2ix_old['σ'], tag2ix_old['ε'])
+#old_model = old_BiLSTM_CRF(char2ix, tag2ix_old, embed_size, hidden_size, tag2ix_old['σ'], tag2ix_old['ε'])
 
 for sents, gold in batch_iter(data, batch_size):
-    sents=sents2tensor(sents, char2ix, char2ix['π'], device)[1:]
-    gold_new=sents2tensor(gold, tag2ix, tag2ix['π'], device)[1:]
+    sents_tensor=sents2tensor(sents, char2ix, char2ix['π'], device)
+    gold_tensor=sents2tensor(gold, tag2ix, tag2ix['π'], device)
     gold_old = torch.tensor([ tag2ix_old[c] for c in gold[0]])
 
 
 
     #print(old_model.neg_log_likelihood(sents[0], gold_old))
-    print('######')
-    mask = 1-sents.data.eq(char2ix['π']).float()
-    score = new_model(sents, gold_new, mask)
+    #print('######')
+    mask = 1-sents_tensor.data.eq(char2ix['π']).float()
+    print(sents_tensor.size(), mask.size(), gold_tensor.size())
+    score = new_model(sents_tensor, gold_tensor, mask)
     print(score)
     break
 
