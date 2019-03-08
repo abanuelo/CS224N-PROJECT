@@ -61,7 +61,7 @@ def get_dictionary():
     Greek characters are used as special symbols
         (abbreviations, named entities, start, and stop)
     """
-    extra_chars = "παβσε"
+    extra_chars = "αβσεπ"
     thai_chars = "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะั าำิ ี ึ ื ุ ู ฺ฿เแโใไๅๆ็ ่ ้ ๊ ๋ ์ ํ ๎๐๑๒๓๔๕๖๗๘๙".replace(" ", "")
     eng_chars = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}"
     all_chars = extra_chars+thai_chars+eng_chars
@@ -136,7 +136,7 @@ def train(args:dict):
         torch.cuda.manual_seed(seed)
 
     #initialize model
-    model = BiLSTM_CRF(len(char2ix),train_batch_size, len(tag2ix), embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG], tag2ix[PADDING])
+    model = BiLSTM_CRF(len(char2ix),train_batch_size, len(tag2ix), embedding_dim, hidden_dim, tag2ix[START_TAG], tag2ix[STOP_TAG], char2ix[PADDING])
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args['--lr']))
 
     #Set device
@@ -175,8 +175,6 @@ def train(args:dict):
             loss = torch.mean(model(sentence_in, targets))
             batch_loss = loss.sum()
             loss = batch_loss/batch_size
-
-
 
             # Step 4. Compute the loss, gradients, and update the parameters by
             # calling optimizer.step()

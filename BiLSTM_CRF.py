@@ -82,6 +82,7 @@ class CRF(nn.Module):
         #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
         # iterate over sentence (max_sent_len)
+        print(h_tag.size(1))
         for t in range(h_tag.size(1)):  
             mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
             emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
@@ -136,7 +137,7 @@ class CRF(nn.Module):
         score = torch.full((self.batch_size,), 0., dtype=torch.float)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
-        for t in range(h_tag.size(1)-1): # iterate through except the last element
+        for t in range(h_tag.size(1)): # iterate through except the last element
             mask_t = mask[:, t]
             emit_t = torch.cat([h_tag[t, gold[t + 1]] for h_tag, gold in zip(h_tag, gold)])
             trans_t = torch.cat([trans[gold[t + 1], gold[t]] for gold in gold])
@@ -157,6 +158,7 @@ class BiLSTM_CRF(nn.Module):
 
 
     def forward(self, inp, gold): # for training
+        print(self.pad_id)
         mask = 1-inp.data.eq(self.pad_id).float()
         inp_embed = self.embeding(inp)
         h_tag = self.lstm(inp_embed, mask)
