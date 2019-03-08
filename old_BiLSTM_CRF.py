@@ -109,6 +109,7 @@ class BiLSTM_CRF(nn.Module):
                 # the ith entry of trans_score is the score of transitioning to
                 # next_tag from i
                 trans_score = self.transitions[next_tag].view(1, -1)
+
                 # The ith entry of next_tag_var is the value for the
                 # edge (i -> next_tag) before we do log-sum-exp
                 next_tag_var = forward_var + trans_score + emit_score
@@ -132,7 +133,6 @@ class BiLSTM_CRF(nn.Module):
         # Gives the score of a provided tag sequence
         score = torch.zeros(1)
         tags = torch.cat([torch.tensor([self.start_id], dtype=torch.long), tags])
-        print(feats.size())
         for i, feat in enumerate(feats):
             score = score + \
                 self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
@@ -191,6 +191,7 @@ class BiLSTM_CRF(nn.Module):
         feats = self._get_lstm_features(sentence)
         forward_score = self._forward_alg(feats)
         gold_score = self._score_sentence(feats, tags)
+        print(forward_score, gold_score)
         return forward_score - gold_score
 
     def forward(self, sentence):  # dont confuse this with _forward_alg above.

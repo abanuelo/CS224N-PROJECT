@@ -75,23 +75,22 @@ class CRF(nn.Module):
         self.trans.data[pad_id, stop_id] = 0. # stop to pad
         self.trans.data[pad_id, pad_id] = 0. #pad to pad
 
-    def forward(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
+    def forward(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)
         #initialize alphas 
         score = torch.full((self.batch_size, self.num_tags), -10000., dtype=torch.float)
         score[:, self.stop_id] = 0. #set the stop score to 0
-        #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
-
+        trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
         # iterate over sentence (max_sent_len)
         for t in range(h_tag.size(1)):  
             mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
             emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
-            score_t_trans = score.unsqueeze(1) + self.trans
-            score_t = score_t_trans + emit_t
+            # score_t_trans = score.unsqueeze(1) + self.trans
+            # print(score_t_trans.size())
+            # score_t = score_t_trans + emit_t
+            score_t = score.unsqueeze(1) + emit_t + trans 
+                            # (batch_size, num_tags, num_tags) -> [batch_size, num_tags, num_tags]
             score_t = log_sum_exp(score_t) # [batch_size, num_tags, num_tags] -> [batch_size, num_tags]
-            score = score_t * mask_t + score * (1 - mask_t)
-            # print(score_t)
-            # print(emit_t)
-            # print(self.trans)
+            score = score_t * mask_t + score * (1 - mask_t) #[batch_size, num_tags]
         score += self.trans[self.stop_id]
         score = log_sum_exp(score)
         return score
@@ -118,9 +117,6 @@ class CRF(nn.Module):
         best_score, best_tag = score.max(1)
         score = log_sum_exp(score)
 
-        # print(bptr)
-        # print(bptr.size())
-        # print(best_tag)
         bptr = bptr.tolist()
         best_path = [[i] for i in best_tag.tolist()]
         for b in range(self.batch_size):
