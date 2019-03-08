@@ -132,6 +132,7 @@ class BiLSTM_CRF(nn.Module):
         # Gives the score of a provided tag sequence
         score = torch.zeros(1)
         tags = torch.cat([torch.tensor([self.start_id], dtype=torch.long), tags])
+        print(feats.size())
         for i, feat in enumerate(feats):
             score = score + \
                 self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]

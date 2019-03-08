@@ -172,7 +172,8 @@ def train(args:dict):
             #targets = torch.tensor([[tag2ix[c] for c in t] for t in tags], dtype=torch.long, device=device)
 
             # Step 3. Run our forward pass.
-            loss = torch.mean(model(sentence_in, targets))
+            mask = 1-sentence_in.data.eq(char2ix[PADDING]).float()
+            loss = torch.mean(model(sentence_in, targets, mask))
             batch_loss = loss.sum()
             loss = batch_loss/batch_size
 
@@ -189,7 +190,7 @@ def train(args:dict):
             report_loss += batch_losses_val
             cum_loss += batch_losses_val
             report_examples += batch_size
-            tgt_chars_num_to_predict = sum(len(c) for c in train_gold)
+            tgt_chars_num_to_predict = sum(len(c) for c in tags)
             cum_tgt_chars += tgt_chars_num_to_predict
             report_tgt_chars += tgt_chars_num_to_predict
             cum_examples += batch_size
@@ -206,60 +207,60 @@ def train(args:dict):
                 train_time = time.time()
                 report_loss = report_tgt_chars = report_examples = 0.
 
-            if train_iter % valid_niter == 0:
-                print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (epoch, train_iter,
-                                                                         cum_loss / cum_examples,
-                                                                         np.exp(cum_loss / cum_tgt_words),
-                                                                         cum_examples), file=sys.stderr)
+            # if train_iter % valid_niter == 0:
+            #     print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (epoch, train_iter,
+            #                                                              cum_loss / cum_examples,
+            #                                                              np.exp(cum_loss / cum_tgt_words),
+            #                                                              cum_examples), file=sys.stderr)
 
-            cum_loss = cum_examples = cum_tgt_words = 0.
-            valid_num += 1
+            # cum_loss = cum_examples = cum_tgt_words = 0.
+            # valid_num += 1
 
-            print('begin validation ...', file=sys.stderr)
-            dev_ppl = evaluate_ppl(model, dev_data, batch_size=128)
-            valid_metric = -dev_ppl
+            # print('begin validation ...', file=sys.stderr)
+            # dev_ppl = evaluate_ppl(model, dev_data, batch_size=128)
+            # valid_metric = -dev_ppl
 
-            print('validation: iter %d, dev. ppl %f' % (train_iter, dev_ppl), file=sys.stderr)
+            # print('validation: iter %d, dev. ppl %f' % (train_iter, dev_ppl), file=sys.stderr)
 
-            is_better = len(hist_valid_scores) == 0 or valid_metric > max(hist_valid_scores)
-            hist_valid_scores.append(valid_metric)
+            # is_better = len(hist_valid_scores) == 0 or valid_metric > max(hist_valid_scores)
+            # hist_valid_scores.append(valid_metric)
 
-            if is_better:
-                patience = 0
-                print('save currently the best model to [%s]' % model_save_path, file=sys.stderr)
-                model.save(model_save_path)
+            # if is_better:
+            #     patience = 0
+            #     print('save currently the best model to [%s]' % model_save_path, file=sys.stderr)
+            #     model.save(model_save_path)
 
-                # also save the optimizers' state
-                torch.save(optimizer.state_dict(), model_save_path + '.optim')
-            elif patience < int(args['--patience']):
-                patience += 1
-                print('hit patience %d' % patience, file=sys.stderr)
+            #     # also save the optimizers' state
+            #     torch.save(optimizer.state_dict(), model_save_path + '.optim')
+            # elif patience < int(args['--patience']):
+            #     patience += 1
+            #     print('hit patience %d' % patience, file=sys.stderr)
 
-                if patience == int(args['--patience']):
-                    num_trial += 1
-                    print('hit #%d trial' % num_trial, file=sys.stderr)
-                    if num_trial == int(args['--max-num-trial']):
-                        print('early stop!', file=sys.stderr)
-                        exit(0)
+            #     if patience == int(args['--patience']):
+            #         num_trial += 1
+            #         print('hit #%d trial' % num_trial, file=sys.stderr)
+            #         if num_trial == int(args['--max-num-trial']):
+            #             print('early stop!', file=sys.stderr)
+            #             exit(0)
 
-                    # decay lr, and restore from previously best checkpoint
-                    lr = optimizer.param_groups[0]['lr'] * float(args['--lr-decay'])
-                    print('load previously best model and decay learning rate to %f' % lr, file=sys.stderr)
+            #         # decay lr, and restore from previously best checkpoint
+            #         lr = optimizer.param_groups[0]['lr'] * float(args['--lr-decay'])
+            #         print('load previously best model and decay learning rate to %f' % lr, file=sys.stderr)
 
-                    # load model
-                    params = torch.load(model_save_path, map_location=lambda storage, loc: storage)
-                    model.load_state_dict(params['state_dict'])
-                    model = model.to(device)
+            #         # load model
+            #         params = torch.load(model_save_path, map_location=lambda storage, loc: storage)
+            #         model.load_state_dict(params['state_dict'])
+            #         model = model.to(device)
 
-                    print('restore parameters of the optimizers', file=sys.stderr)
-                    optimizer.load_state_dict(torch.load(model_save_path + '.optim'))
+            #         print('restore parameters of the optimizers', file=sys.stderr)
+            #         optimizer.load_state_dict(torch.load(model_save_path + '.optim'))
 
-                    # set new lr
-                    for param_group in optimizer.param_groups:
-                        param_group['lr'] = lr
+            #         # set new lr
+            #         for param_group in optimizer.param_groups:
+            #             param_group['lr'] = lr
 
-                    # reset patience
-                    patience = 0
+            #         # reset patience
+            #         patience = 0
 
 
 

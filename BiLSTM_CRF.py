@@ -82,7 +82,6 @@ class CRF(nn.Module):
         #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
         # iterate over sentence (max_sent_len)
-        print(h_tag.size(1))
         for t in range(h_tag.size(1)):  
             mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
             emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
@@ -90,6 +89,9 @@ class CRF(nn.Module):
             score_t = score_t_trans + emit_t
             score_t = log_sum_exp(score_t) # [batch_size, num_tags, num_tags] -> [batch_size, num_tags]
             score = score_t * mask_t + score * (1 - mask_t)
+            # print(score_t)
+            # print(emit_t)
+            # print(self.trans)
         score += self.trans[self.stop_id]
         score = log_sum_exp(score)
         return score
@@ -121,7 +123,6 @@ class CRF(nn.Module):
         # print(best_tag)
         bptr = bptr.tolist()
         best_path = [[i] for i in best_tag.tolist()]
-        print(best_path)
         for b in range(self.batch_size):
             x = best_tag[b] # best tag
             y = int(mask[b].sum().item()) #get length
@@ -137,12 +138,12 @@ class CRF(nn.Module):
         score = torch.full((self.batch_size,), 0., dtype=torch.float)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
-        for t in range(h_tag.size(1)): # iterate through except the last element
+        for t in range(h_tag.size(1)-1): # iterate through except the last element
             mask_t = mask[:, t]
             emit_t = torch.cat([h_tag[t, gold[t + 1]] for h_tag, gold in zip(h_tag, gold)])
             trans_t = torch.cat([trans[gold[t + 1], gold[t]] for gold in gold])
             score += (emit_t + trans_t) * mask_t
-        last_tag = gold.gather(1, mask.sum(1).long().unsqueeze(1)).squeeze(1)
+        last_tag = gold.gather(1, mask.sum(1).long().unsqueeze(1)-1).squeeze(1)
         score += self.trans[self.stop_id, last_tag]
         return score
 
@@ -157,17 +158,16 @@ class BiLSTM_CRF(nn.Module):
         self.crf = CRF(num_tag, batch_size , start_id, stop_id, pad_id)
 
 
-    def forward(self, inp, gold): # for training
-        print(self.pad_id)
-        mask = 1-inp.data.eq(self.pad_id).float()
+
+    def forward(self, inp, gold, mask): # for training
         inp_embed = self.embeding(inp)
         h_tag = self.lstm(inp_embed, mask)
         Z = self.crf.forward(h_tag, mask)
         score = self.crf.score(h_tag, gold, mask)
+        print(Z, score)
         return Z - score # NLL loss
         
-    def decode(self, inp):
-        mask = 1-inp.data.eq(self.pad_id).float()
+    def decode(self, inp, mask):
         inp_embed = self.embeding(inp)
         h_out = self.lstm(inp_embed, mask)
         return self.crf(h_out, mask)
