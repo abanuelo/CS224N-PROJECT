@@ -84,9 +84,6 @@ class CRF(nn.Module):
         for t in range(h_tag.size(1)):  
             mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
             emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
-            # score_t_trans = score.unsqueeze(1) + self.trans
-            # print(score_t_trans.size())
-            # score_t = score_t_trans + emit_t
             score_t = score.unsqueeze(1) + emit_t + trans 
                             # (batch_size, num_tags, num_tags) -> [batch_size, num_tags, num_tags]
             score_t = log_sum_exp(score_t) # [batch_size, num_tags, num_tags] -> [batch_size, num_tags]
@@ -160,9 +157,6 @@ class BiLSTM_CRF(nn.Module):
         h_tag = self.lstm(inp_embed, mask)
         Z = self.crf.forward(h_tag, mask)
         score = self.crf.score(h_tag, gold, mask)
-        print("Z ----------", Z)
-        print("score-------", score)
-        print("difference---------", Z-score)
         return Z - score # NLL loss
         
     def decode(self, inp, mask):
