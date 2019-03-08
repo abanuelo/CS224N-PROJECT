@@ -160,7 +160,9 @@ class BiLSTM_CRF(nn.Module):
         h_tag = self.lstm(inp_embed, mask)
         Z = self.crf.forward(h_tag, mask)
         score = self.crf.score(h_tag, gold, mask)
-        print(Z, score)
+        print("Z ----------", Z)
+        print("score-------", score)
+        print("difference---------", Z-score)
         return Z - score # NLL loss
         
     def decode(self, inp, mask):
