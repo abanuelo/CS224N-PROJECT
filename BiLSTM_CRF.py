@@ -130,7 +130,7 @@ class CRF(nn.Module):
 
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
         batch_size = len(h_tag)
-        score = torch.full((batch_size,), 0., dtype=torch.float)
+        score = torch.full((batch_size,), 0., dtype=torch.float, device=self.trans.data.device)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
         for t in range(h_tag.size(1)-1): # iterate through except the last element
