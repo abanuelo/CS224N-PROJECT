@@ -2,7 +2,7 @@
 
 if [ "$1" = "train" ]; then
 	touch model.bin
-	CUDA_VISIBLE_DEVICES=0 python run.py train --train-input=./data/train.text --train-gold=./data/train_output_gold.txt --save-to=./models/model.bin --cuda
+	CUDA_VISIBLE_DEVICES=0 python run.py train --train-input=./data/train.text --train-gold=./data/train_output_gold.txt --save-to=./models/model.bin --dev-input=./data/dev.txt --dev-gold=./data/dev_output_gold.txt --cuda
 elif [ "$1" = "test" ]; then
     touch outputs/test_outputs.txt
     CUDA_VISIBLE_DEVICES=0 python run.py test model.bin ./data/test.es ./data/test_output_gold.txt outputs/test_outputs.txt --cuda
