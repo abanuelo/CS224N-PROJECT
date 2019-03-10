@@ -99,7 +99,7 @@ class CRF(nn.Module):
     def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
         #initialize alphas 
         batch_size = len(h_tag)
-        bptr = torch.tensor([],dtype=torch.long)
+        bptr = torch.tensor([],dtype=torch.long, device=self.trans.data.device)
         score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
         score[:, self.stop_id] = 0. #set the stop score to 0
         #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
