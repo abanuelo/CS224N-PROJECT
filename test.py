@@ -4,9 +4,9 @@ from utils import get_data, batch_iter, sents2tensor
 from BiLSTM_CRF import BiLSTM_CRF
 from old_BiLSTM_CRF import BiLSTM_CRF as old_BiLSTM_CRF
 
-batch_size =5
+batch_size = 3
 embed_size = 5
-hidden_size = 10
+hidden_size = 4
 
 torch.manual_seed(1)
 data = get_data("./data/train_small.txt", "./data/train_small_output_gold.txt")
@@ -46,6 +46,8 @@ for e in range(100):
                 print(loss)
         if (e%5==0):
             print('---------------------------------------------------')
+
+
 
 
 

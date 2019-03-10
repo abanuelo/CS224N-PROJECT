@@ -3,7 +3,7 @@
 """
 Usage:
     run.py train --train-input=<file> --train-gold=<file> --dev-input=<file> --dev-gold=<file>[options]
-    run.py test --test-input=<file> --test-gold=<file>  [options]
+    run.py test --test-input=<file> --test-gold=<file> --model-output=<file> [options]
 
 
 Options:
@@ -14,17 +14,18 @@ Options:
     --test-gold=<file>               Testing gold path
     --dev-input=<file>               Dev input path
     --dev-gold=<file>                Dev gold path
+    --model-output=<file>            Model output path
     --seed=<int>                     seed  [default: 0]
     --batch-size=<int>               batch size  [default: 32]
-    --embed-size=<int>               embedding size  [default: 256]
-    --hidden-size=<int>              hidden size  [default: 256]
-    --clip-grad=<float>              gradient clipping  [default: 5.0]
+    --embed-size=<int>               embedding size  [default: 64]
+    --hidden-size=<int>              hidden size  [default: 128]
+    --clip-grad=<float>              gradient clipping  [default: 0.1]
     --log-every=<int>                log every  [default: 10]
     --max-epoch=<int>                max epoch  [default: 30]
     --input-feed                     use input feeding
     --patience=<int>                 wait for how many iterations to decay learning rate  [default: 5]
     --max-num-trial=<int>            terminate training after how many trials  [default: 5]
-    --lr-decay=<float>               learning rate decay  [default: 0.5]
+    --lr-decay=<float>               learning rate decay  [default: 0.001]
     --beam-size=<int>                beam size  [default: 5]
     --sample-size=<int>              sample size  [default: 5]
     --lr=<float>                     learning rate [default: 0.001]
@@ -51,6 +52,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from f1 import compute_F1_scores
 #import reader
 from  BiLSTM_CRF import BiLSTM_CRF
 from utils import batch_iter, get_data, sents2tensor
@@ -67,6 +69,7 @@ class Run():
         self.args = docopt(__doc__)
         self.char2id, self.id2char = self.get_dictionary()
         self.tag2id = {"0": 0, "1": 1, self.start_tag: 2, self.stop_tag: 3, self.padding: 4}
+        self.id2tag = {value:key for key,value in  self.tag2id.items()}
         self.device = torch.device("cuda:0" if self.args['--cuda'] else "cpu")
         self.model = None
         self.optimizer = None
@@ -108,8 +111,10 @@ class Run():
                 loss = -self.model(inp_tensor, gold_tensor, mask).sum()
 
                 cum_loss += loss.item()
+                #print("cum_loss", cum_loss)
                 gold_char_num_to_predict = sum(len(s[1:]) for s in gold)  # omitting leading `<s>`
                 cum_gold_chars += gold_char_num_to_predict
+                #print("cum_gold_chars", cum_gold_chars)
 
             ppl = np.exp(cum_loss / cum_gold_chars)
 
@@ -182,8 +187,7 @@ class Run():
                 # Step 3. Run our forward pass.
                 mask = 1-sentence_in.data.eq(self.char2id[self.padding]).float()
                 loss = torch.mean(self.model(sentence_in, targets, mask))
-                batch_loss = loss.sum()
-                loss = batch_loss/batch_size
+                batch_loss = loss#loss.sum()
 
                 # Step 4. Compute the loss, gradients, and update the parameters by
                 # calling self.optimizer.step()
@@ -205,9 +209,9 @@ class Run():
 
                 if train_iter % log_every == 0:
                     print('epoch %d, iter %d, avg. loss %.2f, avg. ppl %.2f ' \
-                          'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (e, train_iter,
+                          'cum. examples %d, speed %.2f chars/sec, time elapsed %.2f sec' % (e, train_iter,
                                                                                              report_loss / report_examples,
-                                                                                             math.exp(report_loss / report_gold_chars),
+                                                                                             loss,
                                                                                              cum_examples,
                                                                                              report_gold_chars / (time.time() - train_time),
                                                                                              time.time() - begin_time), file=sys.stderr)
@@ -215,6 +219,8 @@ class Run():
                     train_time = time.time()
                     report_loss = report_gold_chars = report_examples = 0.
 
+                #print("cum_loss", cum_loss)
+                #print("cum_gold_chars", cum_gold_chars)
                 if train_iter % valid_niter == 0:
                     print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (e, train_iter,
                                                                              cum_loss / cum_examples,
@@ -274,40 +280,40 @@ class Run():
         print('reached maximum number of epochs!', file=sys.stderr)
 
 
-    def write_to_output(self, test_data_gold):
+    def write_to_output(self, output_gold, file):
         """ Computes the F1 Score reported by the trained model while writing 
         to the necessary output file for testing purposes
         """
         prepared_test_data_gold = []
 
-        with open(self.args['OUTPUT_FILE'], 'w') as f:
-            for sent in test_data_gold:
-                char_seq = prepare_sequence(sent, self.char2id)
-                prepared_test_data_gold.append(char_seq)
-                tokenized_output = ''.join(self.model(prepared_test_data_gold))
-                f.write(tokenized_output + '\n')
-
+        
+        for sent in output_gold:
+            line = ''.join([self.id2tag[c] for c in sent]) + '\n'
+            file.write(line)
 
 
     #Similar to the Decode function within assignment a5
     def test(self):
-        print("load test source input from [{}]".format(self.args['TEST_INPUT_FILE']), file=sys.stderr)
-        test_data_src = reader.read_corpus(self.args['TEST_INPUT_FILE'], source='src')
-        if self.args['TEST_GOLD_FILE']:
-            print("load test target output from [{}]".format(self.args['TEST_GOLD_FILE']), file=sys.stderr)
-            test_data_gold = reader.read_corpus(self.args['TEST_GOLD_FILE'], source='gold')
+        print("load test source input from [{}]".format(self.args['--test-input']), file=sys.stderr)    
+        print("load test target output from [{}]".format(self.args['--test-gold']), file=sys.stderr)
+        testing_data = get_data(self.args['--test-input'], self.args['--test-gold'])
 
-        print("load model from {}".format(self.args['MODEL_PATH']), file=sys.stderr)
-        model = BiLSTM_CRF.load(self.args['MODEL_PATH'])
+        print("load model from {}".format(self.args['--save-to']), file=sys.stderr)
+        model = BiLSTM_CRF.load(self.args['--save-to'])
 
         if self.args['--cuda']:
             self.model = self.model.to(torch.self.device("cuda:0"))
 
-        if self.args['TEST_TARGET_FILE']:
-            write_to_output(test_data_gold, self.char2id, self.tag2id)
+        with open(self.args['--model-output'], 'w+') as f:
+            for inp, _ in batch_iter(testing_data, batch_size=128):
+                inp_tensor=sents2tensor(inp, self.char2id, self.char2id[self.padding], self.device)
+                mask = 1-inp_tensor.data.eq(self.char2id[self.padding]).float()
+                model_output = model.decode(inp_tensor, mask)
+                self.write_to_output(model_output, f)
 
         F1_micro, F1_macro = compute_F1_scores()
-        print("F1 Score: {}".format(F1))
+        print("F1_micro", F1_micro)
+        print("F1_macro", F1_macro)
 
 
 def main():
