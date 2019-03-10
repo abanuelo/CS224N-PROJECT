@@ -77,7 +77,7 @@ class CRF(nn.Module):
     def forward(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)
         #initialize alphas 
         batch_size = len(h_tag)
-        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float)
+        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
         score[:, self.stop_id] = 0. #set the stop score to 0
         trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
         # iterate over sentence (max_sent_len)
@@ -97,7 +97,7 @@ class CRF(nn.Module):
         #initialize alphas 
         batch_size = len(h_tag)
         bptr = torch.tensor([],dtype=torch.long)
-        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float)
+        score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
         score[:, self.stop_id] = 0. #set the stop score to 0
         #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
@@ -130,7 +130,7 @@ class CRF(nn.Module):
 
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
         batch_size = len(h_tag)
-        score = torch.full((batch_size,), 0., dtype=torch.float)
+        score = torch.full((batch_size,), 0., dtype=torch.float, device=self.trans.data.device)
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
         for t in range(h_tag.size(1)-1): # iterate through except the last element

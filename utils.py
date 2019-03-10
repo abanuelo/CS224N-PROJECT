@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import os
 import math
 import numpy as np
@@ -10,7 +12,7 @@ import torch.optim as optim
 def get_data(input_path, gold_path):
     data = []
     #Reading in Data from the Train Set
-    with open(input_path) as textfile1, open(gold_path) as textfile2: 
+    with open(input_path, encoding='utf-8-sig') as textfile1, open(gold_path, encoding='utf-8-sig') as textfile2: 
         for x, y in zip_longest(textfile1, textfile2):
             characters = list(x.strip('\n'))
             gold = list(y.strip('\n'))
@@ -70,6 +72,7 @@ def sents2tensor(sents: list, char2ix:dict, pad_id:int, device: torch.device):
     @return a tensor of dim (max_string_length, batch_size)
     """
     
+    #ids = [[char2ix[c] for c in (['σ'] + list(s) + ['ε'])] for s in sents]
     ids = [[char2ix[c] for c in (['σ'] + list(s) + ['ε'])] for s in sents]
     padded = pad_ids(ids, pad_id)
     data = torch.tensor(padded, dtype=torch.long, device=device)
