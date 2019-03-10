@@ -182,8 +182,8 @@ class Run():
                 # Step 3. Run our forward pass.
                 mask = 1-sentence_in.data.eq(self.char2id[self.padding]).float()
                 loss = torch.mean(self.model(sentence_in, targets, mask))
-                batch_loss = loss.sum()
-                loss = batch_loss/batch_size
+                print("current loss", loss)
+                batch_loss = loss#loss.sum()
 
                 # Step 4. Compute the loss, gradients, and update the parameters by
                 # calling self.optimizer.step()
@@ -205,9 +205,9 @@ class Run():
 
                 if train_iter % log_every == 0:
                     print('epoch %d, iter %d, avg. loss %.2f, avg. ppl %.2f ' \
-                          'cum. examples %d, speed %.2f words/sec, time elapsed %.2f sec' % (e, train_iter,
+                          'cum. examples %d, speed %.2f chars/sec, time elapsed %.2f sec' % (e, train_iter,
                                                                                              report_loss / report_examples,
-                                                                                             math.exp(report_loss / report_gold_chars),
+                                                                                             loss,
                                                                                              cum_examples,
                                                                                              report_gold_chars / (time.time() - train_time),
                                                                                              time.time() - begin_time), file=sys.stderr)
