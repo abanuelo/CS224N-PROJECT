@@ -4,9 +4,9 @@ from utils import get_data, batch_iter, sents2tensor
 from BiLSTM_CRF import BiLSTM_CRF
 from old_BiLSTM_CRF import BiLSTM_CRF as old_BiLSTM_CRF
 
-batch_size =5
+batch_size = 3
 embed_size = 5
-hidden_size = 10
+hidden_size = 4
 
 torch.manual_seed(1)
 data = get_data("./data/train_small.txt", "./data/train_small_output_gold.txt")
@@ -33,15 +33,15 @@ for sents, gold in batch_iter(data, batch_size):
     print(sents_tensor.size(), mask.size(), gold_tensor.size())
     score = new_model(sents_tensor, gold_tensor, mask)
     loss = torch.mean(score)
-    loss.backward()
+    #loss.backward()
     print('score: ',score, 'loss:', loss)
-    score.backwards()
+    #score.backwards()
     print('######')
     for i in range(len(sents)):
         gold_old = torch.tensor([tag2ix_old[c] for c in gold[i]])
         sents_old = torch.tensor([char2ix[c] for c in sents[i]])
         loss = old_model.neg_log_likelihood(sents_old, gold_old)
-        loss.backward()
+        #loss.backward()
         print(loss)
     print('---------------------------------------------------')
 

@@ -167,7 +167,6 @@ class BiLSTM_CRF(nn.Module):
         self.crf = CRF(num_tag, start_id, stop_id, pad_id)
 
 
-
     def forward(self, inp, gold, mask): # for training
         inp_embed = self.embeding(inp)
         h_tag = self.lstm(inp_embed, mask)
@@ -178,7 +177,7 @@ class BiLSTM_CRF(nn.Module):
     def decode(self, inp, mask):
         inp_embed = self.embeding(inp)
         h_out = self.lstm(inp_embed, mask)
-        return self.crf(h_out, mask)
+        return self.crf.decode(h_out, mask)
 
     @staticmethod
     def load(model_path: str):
@@ -198,8 +197,8 @@ class BiLSTM_CRF(nn.Module):
         """
         print('save model parameters to [%s]' % path, file=sys.stderr)
         params = {
-            'args': dict(vocab_size=self.vocab_size, num_tag=self.num_tag, embedding_dim=self.embedding_dim,
-                            start_id=self.start_id, stop_id=self.stop_id, pad_id=self.pad_id),
+            'args': dict(vocab_size=self.vocab_size, num_tag=self.num_tag, embedding_dim=self.embedding_dim, 
+                hidden_dim=self.hidden_dim, start_id=self.start_id, stop_id=self.stop_id, pad_id=self.pad_id),
             'state_dict': self.state_dict()
         }
 
