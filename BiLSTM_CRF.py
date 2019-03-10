@@ -98,6 +98,7 @@ class CRF(nn.Module):
 
     def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
         #initialize alphas 
+        print(mask)
         batch_size = len(h_tag)
         bptr = torch.tensor([],dtype=torch.long, device=self.trans.data.device)
         score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
@@ -119,6 +120,7 @@ class CRF(nn.Module):
         score = log_sum_exp(score)
 
         bptr = bptr.tolist()
+        print(bptr)
         best_path = [[i] for i in best_tag.tolist()]
         for b in range(batch_size):
             x = best_tag[b] # best tag
@@ -158,8 +160,6 @@ class BiLSTM_CRF(nn.Module):
         self.start_id = start_id
         self.stop_id = stop_id
         self.pad_id = pad_id
-
-
 
         #Models
         self.embeding = nn.Embedding(vocab_size, embedding_dim)

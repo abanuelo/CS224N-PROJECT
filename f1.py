@@ -9,7 +9,7 @@ def compute_F1_scores():
     FP_macro = 0 
     FN_macro = 0
 
-    with open("./outputs/test_outputs_local.txt") as tgt_file, open("./data/dev_small_output_gold.txt") as gold_file:
+    with open("./outputs/test_local_outputs.txt") as tgt_file, open("./data/dev_small_output_gold.txt") as gold_file:
         for tgt, gold in zip_longest(tgt_file, gold_file):
             characters = list(tgt.strip('\n'))
             characters_gold = list(gold.strip('\n'))
