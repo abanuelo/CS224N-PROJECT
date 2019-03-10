@@ -2,10 +2,10 @@
 
 if [ "$1" = "train" ]; then
 	touch model.bin
-	CUDA_VISIBLE_DEVICES=0 python run.py train --train-input=./data/train.txt --train-gold=./data/train_output_gold.txt --save-to=./models/model.bin --dev-input=./data/dev.txt --dev-gold=./data/dev_output_gold.txt --cuda
+	CUDA_VISIBLE_DEVICES=0 python run.py train --train-input=./data/train.txt --train-gold=./data/train_output_gold.txt --save-to=./models/model.bin --dev-input=./data/dev_small.txt --dev-gold=./data/dev_small_output_gold.txt --cuda
 elif [ "$1" = "test" ]; then
     touch outputs/test_outputs.txt
-    CUDA_VISIBLE_DEVICES=0 python run.py test model.bin ./data/test.es ./data/test_output_gold.txt outputs/test_outputs.txt --cuda
+    CUDA_VISIBLE_DEVICES=0 python run.py test --save-to=./models/model.bin --test-input=./data/test.txt --test-gold=./data/test_output_gold.txt --cuda
 elif [ "$1" = "train_local" ]; then
 	touch model.bin
 	python run.py train --train-input=./data/train_small.txt --train-gold=./data/train_small_output_gold.txt \
