@@ -277,6 +277,7 @@ class Run():
                             patience = 0
 
 
+
         print('reached maximum number of epochs!', file=sys.stderr)
 
 
@@ -305,7 +306,7 @@ class Run():
             self.model = self.model.to(torch.self.device("cuda:0"))
 
         with open(self.args['--model-output'], 'w+') as f:
-            for inp, _ in batch_iter(testing_data, batch_size=128):
+            for inp, _ in batch_iter(testing_data, batch_size=1):
                 inp_tensor=sents2tensor(inp, self.char2id, self.char2id[self.padding], self.device)
                 mask = 1-inp_tensor.data.eq(self.char2id[self.padding]).float()
                 model_output = model.decode(inp_tensor, mask)
