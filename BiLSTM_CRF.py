@@ -98,12 +98,15 @@ class CRF(nn.Module):
 
     def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
         #initialize alphas 
-        print(mask)
+
+
+
         batch_size = len(h_tag)
         bptr = torch.tensor([],dtype=torch.long, device=self.trans.data.device)
         score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
+        #score[:, self.start_id] = 0.
         score[:, self.stop_id] = 0. #set the stop score to 0
-        #trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
+        trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
         # iterate over sentence (max_sent_len)
         for t in range(h_tag.size(1)):  
@@ -120,7 +123,6 @@ class CRF(nn.Module):
         score = log_sum_exp(score)
 
         bptr = bptr.tolist()
-        print(bptr)
         best_path = [[i] for i in best_tag.tolist()]
         for b in range(batch_size):
             x = best_tag[b] # best tag
@@ -128,7 +130,8 @@ class CRF(nn.Module):
             for bptr_t in reversed(bptr[b][:y]):
                 x = bptr_t[x]
                 best_path[b].append(x)
-            best_path[b].pop() #pop the start token
+            print(best_path)
+            #best_path[b].pop() #pop the start token
             best_path[b].reverse()
         return best_path
 
@@ -136,6 +139,11 @@ class CRF(nn.Module):
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
         batch_size = len(h_tag)
         score = torch.full((batch_size,), 0., dtype=torch.float, device=self.trans.data.device)
+
+        #starts = torch.tensor([self.start_id]*batch_size, dtype=torch.long, device=self.trans.data.device).unsqueeze(1)
+
+        #gold = torch.cat([starts, gold], dim =1)
+
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
         for t in range(h_tag.size(1)-1): # iterate through except the last element
