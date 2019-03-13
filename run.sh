@@ -14,7 +14,7 @@ elif [ "$1" = "test_local" ]; then
 	mkdir -p outputs
 	#rm -f outputs/test_local_outputs.txt
     #touch outputs/test_local_outputs.txt
-    python run.py test --save-to=./models/model.bin --test-input=./data/dev_small.txt --test-gold=./data/dev_small_output_gold.txt --model-output=./outputs/test_local_outputs.txt 
+    python run.py test --batch-size=1 --save-to=./models/model.bin --test-input=./data/dev_small.txt --test-gold=./data/dev_small_output_gold.txt --model-output=./outputs/test_local_outputs.txt 
 else
 	echo "Invalid Option Selected"
 fi
