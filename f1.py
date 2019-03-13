@@ -1,7 +1,7 @@
 import os
 from itertools import zip_longest
 
-def compute_F1_scores():
+def compute_F1_scores(inp_path, gold_path):
     F1_micro = 0
     F1_macro = 0
     F1_arr = []
@@ -9,7 +9,7 @@ def compute_F1_scores():
     FP_macro = 0 
     FN_macro = 0
 
-    with open("./outputs/test_local_outputs.txt") as tgt_file, open("./data/dev_small_output_gold.txt") as gold_file:
+    with open(inp_path) as tgt_file, open(gold_path) as gold_file:
         for tgt, gold in zip_longest(tgt_file, gold_file):
             characters = list(tgt.strip('\n'))
             characters_gold = list(gold.strip('\n'))
@@ -17,6 +17,8 @@ def compute_F1_scores():
             FP= 0
             FN = 0
             for i in range(len(characters)):
+                assert characters[i] == '1' or characters[i] == '0'
+                assert characters_gold[i] == '1' or characters_gold[i] == '0'
                 if characters[i] == characters_gold[i] and characters[i] == '1':
                     TP += 1
                     TP_macro += 1
@@ -45,7 +47,7 @@ def compute_F1_scores():
     return F1_micro, F1_macro
 
 def main():
-    compute_F1_scores()
+    compute_F1_scores("./outputs/test_local_outputs.txt", "./data/dev_small_output_gold.txt")
 
 if __name__ == '__main__':
     main()
