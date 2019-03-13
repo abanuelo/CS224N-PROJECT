@@ -312,7 +312,7 @@ class Run():
                 model_output = model.decode(inp_tensor, mask)
                 self.write_to_output(model_output, f)
 
-        F1_micro, F1_macro = compute_F1_scores()
+        F1_micro, F1_macro = compute_F1_scores(self.args['--model-output'], self.args['--test-gold'])
         print("F1_micro", F1_micro)
         print("F1_macro", F1_macro)
 

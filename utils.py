@@ -72,8 +72,8 @@ def sents2tensor(sents: list, char2ix:dict, pad_id:int, device: torch.device):
     @return a tensor of dim (max_string_length, batch_size)
     """
     
-    ids = [[char2ix[c] for c in (list(s))] for s in sents]
-    #ids = [[char2ix[c] for c in (['σ'] + list(s) + ['ε'])] for s in sents]
+    #ids = [[char2ix[c] for c in (['σ']+list(s))] for s in sents]
+    ids = [[char2ix[c] for c in (['σ'] + list(s) + ['ε'])] for s in sents]
     padded = pad_ids(ids, pad_id)
     data = torch.tensor(padded, dtype=torch.long, device=device)
     return data

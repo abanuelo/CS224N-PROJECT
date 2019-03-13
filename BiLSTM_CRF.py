@@ -98,9 +98,6 @@ class CRF(nn.Module):
 
     def decode(self, h_tag, mask): #(batch_size, max_sent_len, tag_size)????
         #initialize alphas 
-
-
-
         batch_size = len(h_tag)
         bptr = torch.tensor([],dtype=torch.long, device=self.trans.data.device)
         score = torch.full((batch_size, self.num_tags), -10000., dtype=torch.float, device=self.trans.data.device)
@@ -109,7 +106,7 @@ class CRF(nn.Module):
         trans = self.trans.unsqueeze(0) #(1,num_tags,num_tags)
 
         # iterate over sentence (max_sent_len)
-        for t in range(h_tag.size(1)):  
+        for t in range(h_tag.size(1)-2):  #-2 because 1 index & ignore the end token
             mask_t = mask[:, t].unsqueeze(1) #get t'th mask (batch_size, 1, 1)
             emit_t = h_tag[:, t].unsqueeze(2) # (batch_size, num_tags, 1)
             score_t_trans = score.unsqueeze(1) + self.trans
@@ -130,8 +127,7 @@ class CRF(nn.Module):
             for bptr_t in reversed(bptr[b][:y]):
                 x = bptr_t[x]
                 best_path[b].append(x)
-            print(best_path)
-            #best_path[b].pop() #pop the start token
+            best_path[b].pop() #pop the start token
             best_path[b].reverse()
         return best_path
 
