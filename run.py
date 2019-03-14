@@ -160,8 +160,6 @@ class Run():
                      hidden_dim, self.tag2id[self.start_tag], self.tag2id[self.stop_tag], self.char2id[self.padding])
         else:
             raise Exception("invalid model")
-        
-
         #set optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=float(self.args['--lr']))
 
