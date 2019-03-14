@@ -10,6 +10,10 @@ elif [ "$1" = "train_local" ]; then
 	touch ./models/model.bin
 	python run.py train --train-input=./data/train_small.txt --train-gold=./data/train_small_output_gold.txt \
         --batch-size=3 --valid-niter=100 --max-epoch=120 --save-to=./models/model.bin --dev-input=./data/dev_small.txt --dev-gold=./data/dev_small_output_gold.txt
+elif [ "$1" = "train_local_2" ]; then
+	touch ./models/model_2.bin
+	python run.py train --train-input=./data/train_small.txt --train-gold=./data/train_small_output_gold.txt --batch-size=3 \
+	--valid-niter=100 --max-epoch=120 --save-to=./models/model_2.bin --dev-input=./data/dev_small.txt --dev-gold=./data/dev_small_output_gold.txt
 elif [ "$1" = "test_local" ]; then
 	mkdir -p outputs
 	#rm -f outputs/test_local_outputs.txt
