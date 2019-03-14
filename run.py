@@ -34,6 +34,7 @@ Options:
     --valid-niter=<int>              perform validation after how many iterations [default: 2000]
     --dropout=<float>                dropout  [default: 0.3]
     --max-decoding-time-step=<int>   maximum number of decoding time steps  [default: 70]
+    --model=<model>                  type of model used [default: lstm_crf]
     --cuda                           Use the gpu
 
 This file will initialize the dataset, character lookup table
@@ -54,7 +55,8 @@ import torch.optim as optim
 import numpy as np
 from f1 import compute_F1_scores
 #import reader
-from  BiLSTM_CRF import BiLSTM_CRF
+from BiLSTM_CRF import BiLSTM_CRF
+from GRU_CRF import GRU_CRF
 from utils import batch_iter, get_data, sents2tensor
 
 #####################################################################
@@ -150,8 +152,17 @@ class Run():
             torch.cuda.manual_seed(seed)
 
         #initialize model
-        self.model = BiLSTM_CRF(len(self.char2id), len(self.tag2id), embedding_dim,
+        if self.args['--model'] == 'lstm_crf':
+            self.model = BiLSTM_CRF(len(self.char2id), len(self.tag2id), embedding_dim,
                      hidden_dim, self.tag2id[self.start_tag], self.tag2id[self.stop_tag], self.char2id[self.padding])
+        elif self.args['--model'] == 'gru_crf':
+            self.model = GRU_CRF(len(self.char2id), len(self.tag2id), embedding_dim,
+                     hidden_dim, self.tag2id[self.start_tag], self.tag2id[self.stop_tag], self.char2id[self.padding])
+        else:
+            raise Exception("invalid model")
+        
+
+        #set optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=float(self.args['--lr']))
 
         #Set self.device
@@ -300,16 +311,24 @@ class Run():
         testing_data = get_data(self.args['--test-input'], self.args['--test-gold'])
 
         print("load model from {}".format(self.args['--save-to']), file=sys.stderr)
-        model = BiLSTM_CRF.load(self.args['--save-to'])
+
+        #load model
+        if self.args['--model'] == 'lstm_crf':
+            self.model = BiLSTM_CRF.load(self.args['--save-to'])
+        elif self.args['--model'] == 'gru_crf':
+            self.model = GRU_CRF.load(self.args['--save-to'])
+        else:
+            raise Exception("invalid model")
+        #self.model = BiLSTM_CRF.load(self.args['--save-to'])
 
         if self.args['--cuda']:
-            self.model = self.model.to(torch.self.device("cuda:0"))
+            self.model = self.model.to(torch.device("cuda:0"))
 
         with open(self.args['--model-output'], 'w+') as f:
             for inp, _ in batch_iter(testing_data, batch_size=1):
                 inp_tensor=sents2tensor(inp, self.char2id, self.char2id[self.padding], self.device)
                 mask = 1-inp_tensor.data.eq(self.char2id[self.padding]).float()
-                model_output = model.decode(inp_tensor, mask)
+                model_output = self.model.decode(inp_tensor, mask)
                 self.write_to_output(model_output, f)
 
         F1_micro, F1_macro = compute_F1_scores(self.args['--model-output'], self.args['--test-gold'])
