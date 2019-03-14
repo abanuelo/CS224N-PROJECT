@@ -6,6 +6,9 @@ if [ "$1" = "train" ]; then
 elif [ "$1" = "test" ]; then
     touch outputs/test_outputs.txt
     CUDA_VISIBLE_DEVICES=0 python run.py test --save-to=./models/model.bin --test-input=./data/test.txt --test-gold=./data/test_output_gold.txt --cuda
+elif [ "$1" = "train_medium" ]; then
+	touch ./models/model_medium.bin
+	CUDA_VISIBLE_DEVICES=0 python run.py train --train-input=./data/train_1000.txt --train-gold=./data/train_output_gold_1000.txt --save-to=./models/model_medium.bin --dev-input=./data/dev_small.txt --dev-gold=./data/dev_small_output_gold.txt --cuda
 elif [ "$1" = "train_local" ]; then
 	touch ./models/model.bin
 	python run.py train --train-input=./data/train_small.txt --train-gold=./data/train_small_output_gold.txt \

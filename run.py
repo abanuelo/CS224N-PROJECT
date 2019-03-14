@@ -300,16 +300,18 @@ class Run():
         testing_data = get_data(self.args['--test-input'], self.args['--test-gold'])
 
         print("load model from {}".format(self.args['--save-to']), file=sys.stderr)
-        model = BiLSTM_CRF.load(self.args['--save-to'])
+        self.model = BiLSTM_CRF.load(self.args['--save-to'])
+
+        assert model != None
 
         if self.args['--cuda']:
-            self.model = self.model.to(torch.self.device("cuda:0"))
+            self.model = self.model.to(torch.device("cuda:0"))
 
         with open(self.args['--model-output'], 'w+') as f:
             for inp, _ in batch_iter(testing_data, batch_size=1):
                 inp_tensor=sents2tensor(inp, self.char2id, self.char2id[self.padding], self.device)
                 mask = 1-inp_tensor.data.eq(self.char2id[self.padding]).float()
-                model_output = model.decode(inp_tensor, mask)
+                model_output = self.model.decode(inp_tensor, mask)
                 self.write_to_output(model_output, f)
 
         F1_micro, F1_macro = compute_F1_scores(self.args['--model-output'], self.args['--test-gold'])
