@@ -5,3 +5,4 @@ Thai is one of the languages that does not have explicit segmentation, and canno
 
 # Results
 Below is a summarized table of the character-level F1 metrics for our project
+![alt text](https://user-images.githubusercontent.com/32311654/54494648-d73ff580-4899-11e9-8ac8-83fde9d58d79.png)
