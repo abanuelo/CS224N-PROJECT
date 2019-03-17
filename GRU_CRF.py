@@ -15,18 +15,6 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 def log_sum_exp(x):
     m = torch.max(x, -1)[0]
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(-1)), -1))
-    # max_score = x[0, argmax(vec)]
-    # max_score_broadcast = max_score.view(1, -1).expand(1, x.size()[1])
-    # return max_score + torch.log(torch.sum(torch.exp(x - max_score_broadcast)))
-
-# class Embedding(nn.Module):
-#   def __init__(self, embedding_dim, vocab_size):
-#       super(Embedding, self).__init__()
-#       self.embeding = nn.Embedding(vocab_size, embedding_dim)
-
-#   def forward(inp):
-#       return self.embeding(inp)
-
 
 class GRU(nn.Module):
     def __init__(self, num_tag, embedding_dim, hidden_dim, pad_id):

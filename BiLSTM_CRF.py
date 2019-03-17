@@ -15,17 +15,6 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 def log_sum_exp(x):
     m = torch.max(x, -1)[0]
     return m + torch.log(torch.sum(torch.exp(x - m.unsqueeze(-1)), -1))
-    # max_score = x[0, argmax(vec)]
-    # max_score_broadcast = max_score.view(1, -1).expand(1, x.size()[1])
-    # return max_score + torch.log(torch.sum(torch.exp(x - max_score_broadcast)))
-
-# class Embedding(nn.Module):
-#   def __init__(self, embedding_dim, vocab_size):
-#       super(Embedding, self).__init__()
-#       self.embeding = nn.Embedding(vocab_size, embedding_dim)
-
-#   def forward(inp):
-#       return self.embeding(inp)
 
 
 class BiLSTM(nn.Module):
@@ -136,11 +125,6 @@ class CRF(nn.Module):
     def score(self, h_tag, gold, mask): # calculate the score of a given sequence
         batch_size = len(h_tag)
         score = torch.full((batch_size,), 0., dtype=torch.float, device=self.trans.data.device)
-
-        #starts = torch.tensor([self.start_id]*batch_size, dtype=torch.long, device=self.trans.data.device).unsqueeze(1)
-
-        #gold = torch.cat([starts, gold], dim =1)
-
         h_tag = h_tag.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
         for t in range(h_tag.size(1)-1): # iterate through except the last element
