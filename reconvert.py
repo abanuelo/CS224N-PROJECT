@@ -10,6 +10,8 @@ def reconvert(inp, tgt, output_file):
             #iterate and output text to a different file
             lineToInsert = ""
             for i in range(len(characters_gold)):
+                if characters_gold[i] != '0' and characters_gold[i] != '1':
+                    lineToInsert += characters[i]
                 if characters_gold[i] == '0':
                     lineToInsert += characters[i]
                 elif characters_gold[i] == '1':

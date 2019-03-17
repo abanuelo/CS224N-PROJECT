@@ -22,18 +22,14 @@ Options:
     --clip-grad=<float>              gradient clipping  [default: 0.1]
     --log-every=<int>                log every  [default: 10]
     --max-epoch=<int>                max epoch  [default: 30]
-    --input-feed                     use input feeding
     --patience=<int>                 wait for how many iterations to decay learning rate  [default: 5]
     --max-num-trial=<int>            terminate training after how many trials  [default: 5]
     --lr-decay=<float>               learning rate decay  [default: 0.001]
-    --beam-size=<int>                beam size  [default: 5]
     --sample-size=<int>              sample size  [default: 5]
     --lr=<float>                     learning rate [default: 0.001]
     --uniform-init=<float>           uniformly initialize all parameters  [default: 0.1]
     --save-to=<file>                 model save path [default: model.bin]
     --valid-niter=<int>              perform validation after how many iterations [default: 2000]
-    --dropout=<float>                dropout  [default: 0.3]
-    --max-decoding-time-step=<int>   maximum number of decoding time steps  [default: 70]
     --model=<model>                  type of model used [default: lstm_crf]
     --cuda                           Use the gpu
 
@@ -41,7 +37,8 @@ This file will initialize the dataset, character lookup table
 and run training/tsting        
 
 
-# includes modified code from assignment 4 & 5, CS224N (Winter 2019) Stanford university
+includes modified code from assignment 4 & 5, CS224N (Winter 2019) Stanford university
+Author: Armando Banuelos and Nick Tantivasadakarn
 """
 import math
 import time
@@ -54,7 +51,6 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from f1 import compute_F1_scores
-#import reader
 from BiLSTM_CRF import BiLSTM_CRF
 from GRU_CRF import GRU_CRF
 from utils import batch_iter, get_data, sents2tensor
@@ -113,10 +109,8 @@ class Run():
                 loss = -self.model(inp_tensor, gold_tensor, mask).sum()
 
                 cum_loss += loss.item()
-                #print("cum_loss", cum_loss)
                 gold_char_num_to_predict = sum(len(s[1:]) for s in gold)  # omitting leading `<s>`
                 cum_gold_chars += gold_char_num_to_predict
-                #print("cum_gold_chars", cum_gold_chars)
 
             ppl = np.exp(cum_loss / cum_gold_chars)
 
@@ -160,6 +154,7 @@ class Run():
                      hidden_dim, self.tag2id[self.start_tag], self.tag2id[self.stop_tag], self.char2id[self.padding])
         else:
             raise Exception("invalid model")
+
         #set optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=float(self.args['--lr']))
 
@@ -173,25 +168,21 @@ class Run():
         cum_examples = report_examples = valid_num = 0
         hist_valid_scores = []
         train_time = begin_time = time.time()
-
+        hasSaved = False
 
 
         #####  BEGIN TRAINING   ########################################################################
-
-
         for e in range(epoch):  # again, normally you would NOT do 300 epochs, it is toy data
             for sentence, tags in batch_iter(training_data, train_batch_size, shuffle=False):
                 train_iter += 1
                 #Step 1:
                 self.optimizer.zero_grad()
-                #self.model.zero_grad()
 
                 batch_size = len(sentence) #This might be different from train_batch_size in the last iteration
 
                 #Step 2
                 sentence_in = sents2tensor(sentence, self.char2id, self.char2id[self.padding], self.device)
                 targets = sents2tensor(tags, self.tag2id, self.target_padding, self.device)
-                #targets = torch.tensor([[self.tag2id[c] for c in t] for t in tags], dtype=torch.long, self.device=self.device)
 
                 # Step 3. Run our forward pass.
                 mask = 1-sentence_in.data.eq(self.char2id[self.padding]).float()
@@ -200,7 +191,6 @@ class Run():
 
                 # Step 4. Compute the loss, gradients, and update the parameters by
                 # calling self.optimizer.step()
-                #epoch_loss += float(loss[0])
                 loss.backward()
 
                 #clip gradinet
@@ -228,8 +218,6 @@ class Run():
                     train_time = time.time()
                     report_loss = report_gold_chars = report_examples = 0.
 
-                #print("cum_loss", cum_loss)
-                #print("cum_gold_chars", cum_gold_chars)
                 if train_iter % valid_niter == 0:
                     print('epoch %d, iter %d, cum. loss %.2f, cum. ppl %.2f cum. examples %d' % (e, train_iter,
                                                                              cum_loss / cum_examples,
@@ -252,6 +240,7 @@ class Run():
                         patience = 0
                         print('save currently the best model to [%s]' % model_save_path, file=sys.stderr)
                         self.model.save(model_save_path)
+                        hasSaved = True
 
                         # also save the optimizers' state
                         torch.save(self.optimizer.state_dict(), model_save_path + '.optim')
@@ -286,7 +275,8 @@ class Run():
                             patience = 0
 
 
-
+        if hasSaved == False:
+            self.model.save(model_save_path)
         print('reached maximum number of epochs!', file=sys.stderr)
 
 
@@ -295,7 +285,6 @@ class Run():
         to the necessary output file for testing purposes
         """
         prepared_test_data_gold = []
-
         
         for sent in output_gold:
             line = ''.join([self.id2tag[c] for c in sent]) + '\n'
@@ -317,7 +306,6 @@ class Run():
             self.model = GRU_CRF.load(self.args['--save-to'])
         else:
             raise Exception("invalid model")
-        #self.model = BiLSTM_CRF.load(self.args['--save-to'])
 
         if self.args['--cuda']:
             self.model = self.model.to(torch.device("cuda:0"))
